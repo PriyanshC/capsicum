@@ -1,16 +1,28 @@
 package capsicum
 
-import language.experimental.captureChecking
-import scala.util.boundary
+case class Producer(msg: String) extends Effectful
 
-trait ProducerOp extends Effectful
-case object GetAction extends ProducerOp
+object CapsicumMain extends App {
+  println(":3")
 
-object CapsicumMain {
-  val logHello = () => println("Hello!")
-
-  def program(using Capability[ProducerOp, Unit]): Unit = {
-    val f = GetAction.suspend[() => Unit]()
-    (1 to 3).foreach(_ => f())
+  def program(using Capability[Producer, Unit]): Unit = {
+    println("Program: Starting")
+    val reply = Producer("Requesting Data").suspend[String]()
+    println(s"Program received: $reply")
+    println("Program: Ending")
   }
+
+  def run(): Unit = {
+    handle[Producer, Unit] {
+      program
+    } { (effect, resume) =>
+      effect match
+        case Producer(m) => 
+          println(s"Handler caught: $m")
+          resume("Here is your data!")
+          println("Hi worldy")
+    }
+  }
+
+  run()
 }
