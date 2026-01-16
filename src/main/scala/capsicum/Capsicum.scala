@@ -1,37 +1,32 @@
 package capsicum
 
-import scala.util.boundary
-// import language.experimental.captureChecking
-import scala.util.boundary._
+import language.experimental.captureChecking
 
 trait Effectful
 
-enum Control[+R, +E]:
+private enum Control[R, +E <: Effectful]:
   case Done(value: R)
-  case Suspend(effect: E, resume: Any => Control[R, E])
+  case Suspend(effect: E, resume: Effs[E, R] => Control[R, E])
 
-case class Capability[-E <: Effectful, R](label: Label[Control[R, E]])
+case class Capability[+E <: Effectful, R](ctrl: Control[R, E])
 
-infix type Effs[+E <: Effectful, R] = Capability[E, R] ?=> R
+type Effs[-E <: Effectful, R] = Capability[E, R] ?=> R
 
-def handle[E <: Effectful, R](program: E Effs R)(handler: (E, Any => R) => R): R =
-  def step(p: E Effs R): Control[R, E] =
-    boundary: label ?=>
-      val cap = Capability[E, R](label)
-      Control.Done(p(using cap))
+def handle[E <: Effectful, R](program: Effs[E, R])(handler: (E, Effs[E, R] => R) => R): R = {
+  def step(p: Effs[E, R]): Control[R, E] = {
+    val cap = Capability[E, R](Control.Suspend(???, step))
+    Control.Done(p(using cap))
+  }
 
   def loop(res: Control[R, E]): R = res match
     case Control.Done(v) => v
-    case Control.Suspend(eff, cont) => 
-      handler(eff, value => loop(cont(value)))
+    case Control.Suspend(eff, cont) => handler(eff, value => loop(cont(value)))
 
   loop(step(program))
+}
 
 extension [E <: Effectful, R](op: E)(using cap: Capability[E, R])
-  def suspend[A](): A = 
-    break(Control.Suspend(op, value => 
-      Control.Done(value.asInstanceOf[R]) 
-    ))(using cap.label)
+  def suspend[A](): A = ???
 
 
   

@@ -1,5 +1,7 @@
 package capsicum
 
+import language.experimental.captureChecking
+
 case class Producer(msg: String) extends Effectful
 
 object CapsicumMain extends App {
