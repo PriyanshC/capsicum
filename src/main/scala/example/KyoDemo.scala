@@ -7,11 +7,6 @@ trait KyoProducer {
   def produce(): () => Unit
 }
 
-object KyoProducer {
-    def produce(): (() => Unit) < Env[KyoProducer] =
-        Env.use[KyoProducer](_.produce())
-}
-
 
 object KyoDemo extends App {
     val noop = new KyoProducer {
@@ -24,7 +19,7 @@ object KyoDemo extends App {
 
     val program: (() => Unit) < Env[KyoProducer] = //& (() => Unit) 
         for
-            f <- KyoProducer.produce()
+            f <- Env.use[KyoProducer](_.produce())
         yield f
 
     val comp: (() => Unit) < Any = Env.run(leak)(program)
