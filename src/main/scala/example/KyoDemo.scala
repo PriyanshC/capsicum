@@ -1,29 +1,22 @@
 package example
 
 import kyo._
-// import language.experimental.captureChecking
+import language.experimental.captureChecking
 
-trait KyoProducer {
-  def produce(): () => Unit
+sealed trait FnProducer {
+  def produce(): () -> Unit
 }
 
-
 object KyoDemo extends App {
-    val noop = new KyoProducer {
-        def produce() = {() => () }
+    val noop = new FnProducer {
+        def produce() = { () => () }
     }
 
-    val leak = new KyoProducer {
-        def produce() = {println("Hi!"); this.produce}
-    }
+    val program: (() -> Unit) < Env[FnProducer] =
+        Env.use[FnProducer] { producer => producer.produce()}
 
-    val program: (() => Unit) < Env[KyoProducer] = //& (() => Unit) 
-        for
-            f <- Env.use[KyoProducer](_.produce())
-        yield f
+    val comp: (() -> Unit) < Any = Env.run(noop)(program)
 
-    val comp: (() => Unit) < Any = Env.run(leak)(program)
-
-    val foo: () => Unit = comp.eval
-    foo()
+    val res: () -> Unit = comp.eval
+    res()
 }
