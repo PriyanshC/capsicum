@@ -1,30 +1,21 @@
-package capsicum
+package capsicum.demo
 
 import language.experimental.captureChecking
+import capsicum._
 
-case class Producer(msg: String) extends Effectful
 
-object CapsicumMain extends App {
-  println(":3")
+val handler: Handler = new Handler({_ => { (resume: (ResumeValue => ProgReturn)) => 
+  val x: Int = resume(false)
+  val y: Int = resume(true)
+  x + y
+}})
 
-  def program(using Capability[Producer, Unit]): Unit = {
-    println("Program: Starting")
-    val reply = Producer("Requesting Data").suspend[String]()
-    println(s"Program received: $reply")
-    println("Program: Ending")
+val program: Handler ?-> ProgReturn = {
+  val h: Handler = summon[Handler]
+  val flag: ResumeValue = h.handle(())
+  if (flag) {
+    1
+  } else {
+    0
   }
-
-  def run(): Unit = {
-    handle[Producer, Unit] {
-      program
-    } { (effect, resume) =>
-      effect match
-        case Producer(m) => 
-          println(s"Handler caught: $m")
-          resume("Here is your data!")
-          println("Hi worldy")
-    }
-  }
-
-  run()
 }
