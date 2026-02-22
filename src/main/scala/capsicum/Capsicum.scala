@@ -2,10 +2,6 @@ package capsicum
 
 import language.experimental.captureChecking
 
-type ResumeValue = Boolean
-type ProgReturn = Int
-type HandlerInput = Boolean
-type HandlerReturn = Int
 
 // case class Handler(f: HandlerInput => ((ResumeValue => ProgReturn) => HandlerReturn)) {
 //   def run(prog: Handler ?=> ProgReturn): HandlerReturn = {
@@ -18,6 +14,7 @@ type HandlerReturn = Int
 //   }
 // }
 
-enum Prog[+A]:
-  case Pure(a: A)
-  case Suspend(input: HandlerInput, resume: ResumeValue -> Prog[A])
+enum Prog[+R, +A, -V] {
+  case Pure(y: R)
+  case Suspend(x: A, resume: V -> Prog[R, A, V])
+}

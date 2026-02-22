@@ -3,8 +3,12 @@ package capsicum.demo
 import language.experimental.captureChecking
 import capsicum._
 
+type ResumeValue = Boolean
+type ProgReturn = Int
+type HandlerInput = Boolean
+type HandlerReturn = Int
 
-def run(prog: Prog[ProgReturn]): HandlerReturn = prog match {
+def run(prog: Prog[ProgReturn, HandlerInput, ResumeValue]): HandlerReturn = prog match {
   case Prog.Pure(result) => 
     result
   case Prog.Suspend(add, k) =>
@@ -32,8 +36,8 @@ object Main extends App {
   //   }
   // }
 
-  val subprog = Prog.Suspend((false), flag => if (flag) Prog.Pure(1) else Prog.Pure(2))
-  val prog = Prog.Suspend((true), flag => if (flag) Prog.Pure(3) else subprog)
+  val subprog = Prog.Suspend((false), (flag: Boolean) => if (flag) Prog.Pure(1) else Prog.Pure(2))
+  val prog = Prog.Suspend((true), (flag: Boolean) => if (flag) Prog.Pure(3) else subprog)
   val res = run(prog)
   println(res)
 }
