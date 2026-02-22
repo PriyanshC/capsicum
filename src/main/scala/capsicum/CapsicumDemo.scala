@@ -12,9 +12,14 @@ def run(prog: Prog[ProgReturn, HandlerInput, ResumeValue]): HandlerReturn = prog
   case Prog.Pure(result) => 
     result
   case Prog.Suspend(add, k) =>
-    val x = run(k(true))
-    val y = run(k(false))
-    if (add) then x + y else x - y
+    run(k(true).flatMap { x =>
+      k(false).map { y => 
+        if (add) then x + y else x - y
+      }
+    })
+    // val x = run(k(true))
+    // val y = run(k(false))
+    // if (add) then x + y else x - y
 }
 
 
