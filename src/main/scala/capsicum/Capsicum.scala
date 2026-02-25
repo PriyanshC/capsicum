@@ -1,29 +1,18 @@
 package capsicum
 
-import language.experimental.captureChecking
+// import language.experimental.captureChecking
 
+type ResumeValue = Boolean
+type ProgReturn = Int
+type HandlerInput = Boolean
+type HandlerReturn = Int
 
-// case class Handler(f: HandlerInput => ((ResumeValue => ProgReturn) => HandlerReturn)) {
-//   def run(prog: Handler ?=> ProgReturn): HandlerReturn = {
-//     given Handler = this
-//     prog
-//   }
+type ContFn = ResumeValue => ProgReturn
 
-//   def handle(x: HandlerInput): ResumeValue = {
-//     ???
-//   }
-// }
+case class Handler(f: HandlerInput => (ContFn => HandlerReturn)) {
+  def handle(x: HandlerInput, resume: ContFn): ProgReturn = f(x)(resume)
+}
 
-enum Prog[+R, A, V] {
-  case Pure(y: R)
-  case Suspend(x: A, resume: V -> Prog[R, A, V])
-
-  def map[B](f: R -> B): Prog[B, A, V] = this match {
-    case Pure(v) => Pure(f(v))
-    case Suspend(req, k) => Suspend(req, t => k(t).map(f))
-  }
-
-  def flatMap[B](f: R -> Prog[B, A, V]): Prog[B, A, V] = this match
-    case Pure(v) => f(v)
-    case Suspend(req, k) => Suspend(req, t => k(t).flatMap(f))
+def run(prog: Handler ?=> ProgReturn)(handler: Handler): HandlerReturn = {
+  prog(using handler)
 }
