@@ -2,17 +2,10 @@ package capsicum
 
 // import language.experimental.captureChecking
 
-type ResumeValue = Boolean
-type ProgReturn = Int
-type HandlerInput = Boolean
-type HandlerReturn = Int
 
-type ContFn = ResumeValue => ProgReturn
-
-case class Handler(f: HandlerInput => (ContFn => HandlerReturn)) {
-  def handle(x: HandlerInput, resume: ContFn): ProgReturn = f(x)(resume)
+// HandlerInput, ResumeValue, ProgReturn, HandlerReturn
+case class Handler[I, V, P, R](f: I => ((V => P) => R)) {
+  def handle(x: I, resume: V => P): R = f(x)(resume)
 }
 
-def run(prog: Handler ?=> ProgReturn)(handler: Handler): HandlerReturn = {
-  prog(using handler)
-}
+def run[I, V, P, R](prog: Handler[I, V, P, R] ?=> R)(handler: Handler[I, V, P, R]): R = prog(using handler)
