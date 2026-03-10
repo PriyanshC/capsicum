@@ -30,24 +30,6 @@ lazy object SimpleDemo {
   val result: ProgramOut = run(program)(programHandler)
 }
 
-
-// effect Producer[T]{
-// def produce():T
-// }
-
-// def produceAndCallN(n:Int)(usingfunProducer:Producer[()=>()]):Unit={
-// val f=funProducer.produce()
-//  (1 to n).foreach(_=>f())
-// }
-
-// val unsafeHandler:Handler[Producer[()=>()]]={resume=>
-// println("Handler␣called!")
-// resume(resume)//Leak!!
-// }
-
-// run(produceAndCallN(10)).withHandler(unsafeHandler)
-
-
 lazy object ContinuationLeakDemo {
 
   type FnProducer = Handler[Unit, () -> Unit, Unit, Unit]
@@ -70,6 +52,20 @@ lazy object ContinuationLeakDemo {
   //   })
   // }})
   val result: Unit = run(program(5))(goodHandler)
+}
+
+lazy object SmuggledHandlerDemo {
+  var storage: Option[Any] = None
+
+
+  type IntProducer = Handler[Unit, Int, Unit, Unit]
+  val goodHandler: IntProducer = new Handler({_ => { resume => resume(5)}})
+
+  val naughtyProgram: IntProducer ?-> Unit = {
+    val h = summon[IntProducer]
+    storage = Some(h) // Leak
+    storage = Some(() => h.handle((), _ => ())) // Leak
+  }
 }
 
 
