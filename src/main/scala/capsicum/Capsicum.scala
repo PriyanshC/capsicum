@@ -4,7 +4,7 @@ import language.experimental.captureChecking
 
 
 // HandlerInput, ResumeValue, ProgReturn, HandlerReturn
-case class Handler[I, V, P, R](f: I => ((V => P) => R)) {
+case class Handler[I, V, P, R](private val f: I => ((V => P) => R)) {
   def handle(x: I, resume: V => P): R = f(x)(resume)
 }
 
