@@ -27,7 +27,7 @@ lazy object SimpleDemo {
     h.handle((), programResume)
   }
 
-  val result: ProgramOut = run(program)(programHandler)
+  val result: ProgramOut = run(programHandler)(program)
 }
 
 lazy object ContinuationLeakDemo {
@@ -51,7 +51,7 @@ lazy object ContinuationLeakDemo {
   //     resume(() => ())
   //   })
   // }})
-  val result: Unit = run(program(5))(goodHandler)
+  val result: Unit = run(goodHandler)(program(5))
 }
 
 lazy object SmuggledHandlerDemo {
