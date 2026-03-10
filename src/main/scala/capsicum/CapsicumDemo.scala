@@ -1,17 +1,15 @@
 package capsicum.demo
 
 import language.experimental.captureChecking
-
-type ResumeIn = Boolean
-type ResumeOut = Int
-type HandlerIn = Unit
-type ProgramOut = Int
-
-type MyHandler = Handler[HandlerIn, ResumeIn, ResumeOut, ProgramOut]
-
 import capsicum._
 
-object Main extends App {
+lazy object SimpleDemo {
+  type ResumeIn = Boolean
+  type ResumeOut = Int
+  type HandlerIn = Unit
+  type ProgramOut = Int
+
+  type MyHandler = Handler[HandlerIn, ResumeIn, ResumeOut, ProgramOut]
 
   val programResume: ResumeIn -> ResumeOut = { (flag: ResumeIn) => 
     if (flag) {1} else {0}
@@ -30,5 +28,9 @@ object Main extends App {
   }
 
   val result: ProgramOut = run(program)(programHandler)
-  println(result)
+}
+
+
+object Main extends App {
+  println(SimpleDemo.result)
 }
