@@ -1,34 +1,34 @@
 package capsicum.demo
 
-// import language.experimental.captureChecking
+import language.experimental.captureChecking
 
-type ResumeValue = Boolean
-type ProgReturn = Int
-type HandlerInput = Unit
-type HandlerReturn = Int
+type ResumeIn = Boolean
+type ResumeOut = Int
+type HandlerIn = Unit
+type ProgramOut = Int
 
-type MyHandler = Handler[HandlerInput, ResumeValue, ProgReturn, HandlerReturn]
+type MyHandler = Handler[HandlerIn, ResumeIn, ResumeOut, ProgramOut]
 
 import capsicum._
 
 object Main extends App {
 
-  val programResume: ResumeValue => ProgReturn = { (flag: ResumeValue) => 
+  val programResume: ResumeIn -> ResumeOut = { (flag: ResumeIn) => 
     if (flag) {1} else {0}
   }
 
-  val programHandler: MyHandler = new Handler({(_: HandlerInput) => { (resume: (ResumeValue => ProgReturn)) => 
+  val programHandler: MyHandler = new Handler({(_: HandlerIn) => { (resume: (ResumeIn => ResumeOut)) => 
     val x: Int = resume(false)
     val y: Int = resume(true)
     x + y
   }})
 
 
-  val program: MyHandler ?=> HandlerReturn = {
+  val program: MyHandler ?-> ProgramOut = {
     val h = summon[MyHandler]
     h.handle((), programResume)
   }
 
-  val result = run(program)(programHandler)
+  val result: ProgramOut = run(program)(programHandler)
   println(result)
 }

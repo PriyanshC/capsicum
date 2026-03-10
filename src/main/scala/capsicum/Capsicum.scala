@@ -1,6 +1,6 @@
 package capsicum
 
-// import language.experimental.captureChecking
+import language.experimental.captureChecking
 
 
 // HandlerInput, ResumeValue, ProgReturn, HandlerReturn
