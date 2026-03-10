@@ -57,18 +57,20 @@ lazy object ContinuationLeakDemo {
 lazy object SmuggledHandlerDemo {
   type IntProducer = Handler[Unit, Int, Unit, Unit]
 
-  var storage: Option[IntProducer] = None
+  // var storage: Option[IntProducer] = None
+  var storage: Option[() => Unit] = None
 
   val goodHandler: IntProducer = new Handler({_ => { resume => resume(5)}})
 
   val naughtyProgram: IntProducer ?-> Unit = {
     val h = summon[IntProducer]
-    // storage = Some(() => h.handle((), _ => ())) // Leak the handle function
-    storage = Some(h) // Leak the handler itself
+    storage = Some(() => h.handle((), _ => ())) // Leak the handle function
+    // storage = Some(h) // Leak the handler itself
   }
 
   val result = run(goodHandler)(naughtyProgram)
   // storage.get.handle((), println)
+  // storage.get()
 }
 
 
