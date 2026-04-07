@@ -1,4 +1,4 @@
-package example
+// package example
 
 // import scala.language.experimental.captureChecking
 // import java.io.FileOutputStream
