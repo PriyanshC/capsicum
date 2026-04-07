@@ -87,12 +87,3 @@ lazy object SmuggledHandlerFnDemo {
   // val smuggledFn = fnStorage.get
   // smuggledFn()
 }
-
-
-object Main extends App {
-  val result = SimpleDemo.result
-  // val result = ContinuationLeakDemo.result
-  // val result = SmuggledHandlerDemo.result
-
-  println(result)
-}
