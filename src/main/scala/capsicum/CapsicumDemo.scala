@@ -45,13 +45,23 @@ lazy object ContinuationLeakDemo {
     resume(() => ())
   }})
 
-  // TODO this currently compiles, can it be fixed?
+  // ERROR: As it should but I can't understand it though
   // val badHandler: FnProducer = Handler({_ => { resume => 
   //   println("Unsafe handler invoked!")
   //   resume(() => {
   //     resume(() => ())
   //   })
   // }})
+
+  // ERROR: Resume captures resume
+  // val badHandler: FnProducer = new Handler {
+  //   override def handle(x: Unit, resume: (() -> Unit) => Unit): Unit = {
+  //     println("Unsafe handler invoked!")
+  //     resume(() => {
+  //       resume(() => ())
+  //     })
+  //   }
+  // }
   val result: Unit = run(goodHandler)(program(5))
 }
 
