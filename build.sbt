@@ -1,4 +1,4 @@
-scalaVersion := "3.8.0-RC6"
+scalaVersion := "3.8.3"
 
 libraryDependencies += "io.github.marcinzh" %% "turbolift-core" % "0.124.0"
 
