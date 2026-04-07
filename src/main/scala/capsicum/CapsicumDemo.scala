@@ -45,6 +45,7 @@ lazy object ContinuationLeakDemo {
     resume(() => ())
   }})
 
+  // TODO this currently compiles, can it be fixed?
   // val badHandler: FnProducer = new Handler({_ => { resume => 
   //   println("Unsafe handler invoked!")
   //   resume(() => {
@@ -57,27 +58,41 @@ lazy object ContinuationLeakDemo {
 lazy object SmuggledHandlerDemo {
   type IntProducer = Handler[Unit, Int, Unit, Unit]
 
-  // var storage: Option[IntProducer] = None
-  var storage: Option[() => Unit] = None
+  var handlerStorage: Option[IntProducer^] = None
+
+  val goodHandler: IntProducer^ = new Handler({_ => { resume => resume(5)}})
+
+  val naughtyProgram: IntProducer ?-> Unit = {
+    val h: IntProducer^ = summon[IntProducer^]
+    // handlerStorage = Some(h) // ERROR: Leak the handler itself
+  }
+
+  val result = run(goodHandler)(naughtyProgram)
+  // val smuggledHandler: IntProducer = handlerStorage.get // Use the handler
+}
+
+lazy object SmuggledHandlerFnDemo {
+  type IntProducer = Handler[Unit, Int, Unit, Unit]
+
+  var fnStorage: Option[() => Unit] = None
 
   val goodHandler: IntProducer = new Handler({_ => { resume => resume(5)}})
 
   val naughtyProgram: IntProducer ?-> Unit = {
     val h = summon[IntProducer]
-    storage = Some(() => h.handle((), _ => ())) // Leak the handle function
-    // storage = Some(h) // Leak the handler itself
+    // fnStorage = Some(() => h.handle((), _ => ())) // ERROR: Leak the handle function
   }
 
   val result = run(goodHandler)(naughtyProgram)
-  // storage.get.handle((), println)
-  // storage.get()
+  // val smuggledFn = fnStorage.get
+  // smuggledFn()
 }
 
 
 object Main extends App {
   // val result = SimpleDemo.result
-  // val result = ContinuationLeakDemo.result
-  val result = SmuggledHandlerDemo.result
+  val result = ContinuationLeakDemo.result
+  // val result = SmuggledHandlerDemo.result
 
   println(result)
 }
