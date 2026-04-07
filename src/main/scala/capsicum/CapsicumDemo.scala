@@ -45,13 +45,13 @@ lazy object ContinuationLeakDemo {
     resume(() => ())
   }})
 
-  // ERROR: As it should but I can't understand it though
-  // val badHandler: FnProducer = Handler({_ => { resume => 
-  //   println("Unsafe handler invoked!")
-  //   resume(() => {
-  //     resume(() => ())
-  //   })
-  // }})
+  // ERROR if resume is defined as pure. Not ideal
+  val badHandler: FnProducer = Handler({_ => { resume => 
+    println("Unsafe handler invoked!")
+    resume(() => {
+      resume(() => ())
+    })
+  }})
 
   // ERROR: Resume captures resume
   // val badHandler: FnProducer = new Handler {
