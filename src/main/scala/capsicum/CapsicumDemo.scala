@@ -45,13 +45,13 @@ lazy object ContinuationLeakDemo {
     resume(() => ())
   }})
 
-  // ERROR if resume is defined as pure. Not ideal
-  val badHandler: FnProducer = Handler({_ => { resume => 
-    println("Unsafe handler invoked!")
-    resume(() => {
-      resume(() => ())
-    })
-  }})
+  // ERROR: (only if resume is defined as capturing, is this right?)
+  // val badHandler: FnProducer = Handler({_ => { resume => 
+  //   println("Unsafe handler invoked!")
+  //   resume(() => {
+  //     resume(() => ())
+  //   })
+  // }})
 
   // ERROR: Resume captures resume
   // val badHandler: FnProducer = new Handler {
