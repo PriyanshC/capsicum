@@ -15,7 +15,7 @@ lazy object SimpleDemo {
     if (flag) {1} else {0}
   }
 
-  val programHandler: MyHandler = new Handler({(_: HandlerIn) => { (resume: (ResumeIn => ResumeOut)) => 
+  val programHandler: MyHandler = Handler({(_: HandlerIn) => { (resume: (ResumeIn => ResumeOut)) => 
     val x: Int = resume(false)
     val y: Int = resume(true)
     x + y
@@ -40,13 +40,13 @@ lazy object ContinuationLeakDemo {
     })
   }
 
-  val goodHandler: FnProducer = new Handler({_ => { resume => 
+  val goodHandler: FnProducer = Handler({_ => { resume => 
     println("Simple handler invoked!")
     resume(() => ())
   }})
 
   // TODO this currently compiles, can it be fixed?
-  // val badHandler: FnProducer = new Handler({_ => { resume => 
+  // val badHandler: FnProducer = Handler({_ => { resume => 
   //   println("Unsafe handler invoked!")
   //   resume(() => {
   //     resume(() => ())
@@ -60,7 +60,7 @@ lazy object SmuggledHandlerDemo {
 
   var handlerStorage: Option[IntProducer^] = None
 
-  val goodHandler: IntProducer^ = new Handler({_ => { resume => resume(5)}})
+  val goodHandler: IntProducer^ = Handler({_ => { resume => resume(5)}})
 
   val naughtyProgram: IntProducer ?-> Unit = {
     val h: IntProducer^ = summon[IntProducer^]
@@ -76,7 +76,7 @@ lazy object SmuggledHandlerFnDemo {
 
   var fnStorage: Option[() => Unit] = None
 
-  val goodHandler: IntProducer = new Handler({_ => { resume => resume(5)}})
+  val goodHandler: IntProducer = Handler({_ => { resume => resume(5)}})
 
   val naughtyProgram: IntProducer ?-> Unit = {
     val h = summon[IntProducer]
@@ -90,8 +90,8 @@ lazy object SmuggledHandlerFnDemo {
 
 
 object Main extends App {
-  // val result = SimpleDemo.result
-  val result = ContinuationLeakDemo.result
+  val result = SimpleDemo.result
+  // val result = ContinuationLeakDemo.result
   // val result = SmuggledHandlerDemo.result
 
   println(result)
