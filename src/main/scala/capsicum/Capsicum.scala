@@ -1,7 +1,6 @@
 package capsicum
 
 import language.experimental.captureChecking
-
 import capsicum.StateOp._
 
 trait Effect { type V }
@@ -34,5 +33,8 @@ trait StateCapability[S, R] extends Capability[StateOp[S], R, R]:
 class MutableStateHandler[S, R](private var state: S) extends StateCapability[S, R] {
   override def perform(op: StateOp[S], resume: op.V => R): R = op match
     case Get() => resume.asInstanceOf[S => R](state)
-    case Put(value) => resume.asInstanceOf[Unit => R](())
+    case Put(newState) => {
+      state = newState
+      resume.asInstanceOf[Unit => R](())
+    }
 }
