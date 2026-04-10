@@ -2,9 +2,7 @@ package capsicum
 
 import language.experimental.captureChecking
 
-
-// TODO soundness hole with V?
-
+import capsicum.StateOp._
 
 trait Effect { type V }
 
@@ -12,33 +10,29 @@ trait Capability[E <: Effect, P, R]() extends caps.ExclusiveCapability {
   def perform(op: E, resume: op.V => P): R
 }
 
-// object Capability {
-//   def apply[E[V] <: Effect[V], P, R, C^](f: ([V] => (E[V]^, (V => P)) => R)^{C}): Capability[E, P, R]^{C} =
-//       new Capability[E, P, R] {
-//         override def perform[V, C^](op: E[V]^{C}, resume: => V -> P): R = f[V](op, resume)
-//       }
-// }
+object Capability {
+  def apply[E <: Effect, P, R, C^](f: ([V] => (E, (V => P)) => R)^{C}): Capability[E, P, R]^{C} = new Capability[E, P, R] {
+      def perform(op: E, resume: op.V => P): R = f(op, resume)
+    }
+}
 
 // note to self: check against `prog ?-> P`
-// def run[E[V] <: Effect[V], P, R](handler: Capability[E, P, R]^)(prog: (Capability[E, P, R]^{handler}) ?-> R): R = prog(using handler)
+def run[E <: Effect, P, R](handler: Capability[E, P, R]^)(prog: (Capability[E, P, R]^{handler}) ?-> R): R = prog(using handler)
 
 
-// enum StateOp[S, R] extends Effect[R] {
-//   case Get() extends StateOp[S, S]
-//   case Put(value: S) extends StateOp[S, Unit]
-// }
+sealed trait StateOp[S] extends Effect
 
-// trait StateCapability[S, R] extends Capability[[X] =>> StateOp[S, X], R, R] {
-//   final def get(resume: => S -> R): R = perform(StateOp.Get(), resume)
-//   final def put(newState: S, resume: => Unit -> R): R = perform(StateOp.Put(newState), resume)
-// }
+object StateOp {
+  case class Get[S]() extends StateOp[S] { type V = S }
+  case class Put[S](value: S) extends StateOp[S] { type V = Unit }
+}
 
-// class StateHandler[S, R](private var state: S) extends StateCapability[S, R] {
+trait StateCapability[S, R] extends Capability[StateOp[S], R, R]:
+  final def get(resume: S => R): R = perform(StateOp.Get[S](), resume)
+  final def put(newState: S, resume: Unit => R): R = perform(StateOp.Put(newState), resume)
 
-//   override def perform[V](op: StateOp[S, V], resume: => V => R): R = op match
-//     case StateOp.Get() => resume(state)
-//     case StateOp.Put(newState) => {
-//       state = newState
-//       resume(())
-//     }
-// }
+class MutableStateHandler[S, R](private var state: S) extends StateCapability[S, R] {
+  override def perform(op: StateOp[S], resume: op.V => R): R = op match
+    case Get() => resume.asInstanceOf[S => R](state)
+    case Put(value) => resume.asInstanceOf[Unit => R](())
+}
