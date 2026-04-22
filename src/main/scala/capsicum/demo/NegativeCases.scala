@@ -3,7 +3,7 @@ package capsicum.demo
 import scala.language.experimental.captureChecking
 import capsicum._
 
-sealed trait ProduceOp[A] extends Effect { type V = A }
+sealed trait ProduceOp[A] extends Effect { type Result = A }
 
 object ProduceOp {
     case class GetValue[A]() extends ProduceOp[A]
@@ -15,7 +15,7 @@ trait ProducerCapability[A, R] extends Capability[ProduceOp[A], R, R] {
 
 // Always provides no-op and prints!
 class GoodHandler[R] extends ProducerCapability[Unit -> Unit, R] {
-    override def perform(op: ProduceOp[Unit -> Unit], resume: op.V => R): R = op match
+    override def perform(op: ProduceOp[Unit -> Unit], resume: op.Result => R): R = op match
     case ProduceOp.GetValue() => {
         println("Good handler invoked!")
         resume(_ => ())
@@ -24,7 +24,7 @@ class GoodHandler[R] extends ProducerCapability[Unit -> Unit, R] {
 
 lazy object ContinuationLeakDemo {
     class UnsafeHandler[R] extends ProducerCapability[Unit -> Unit, R] {
-      override def perform(op: ProduceOp[Unit -> Unit], resume: op.V => R): R = op match
+      override def perform(op: ProduceOp[Unit -> Unit], resume: op.Result => R): R = op match
         case ProduceOp.GetValue() => {
             // Note: Removing {resume} yields the same error as below, but now earlier
             val leakingInner: Unit ->{resume} Unit = { (_: Unit) =>
