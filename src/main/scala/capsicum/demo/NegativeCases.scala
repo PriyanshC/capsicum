@@ -38,36 +38,7 @@ lazy object ContinuationLeakDemo {
             ???
         }
       }
-
-    // TODO not in this obj?
-    // def program(n: Int): ProducerCapability[Unit -> Unit, Unit] ?-> Unit = {
-    //     val r = summon[ProducerCapability[Unit -> Unit, Unit]].perform(ProduceOp.GetValue(), { (f: Unit -> Unit) => 
-    //         (1 to n).foreach(_ => f)
-    //     })
-    // }
-
-    // val result1 = program(3)(using new GoodHandler[Unit])
 }
-
-  // ERROR: (only if resume is defined as capturing, is this right?)
-  // val badHandler: FnProducer = Handler({_ => { resume => 
-  //   println("Unsafe handler invoked!")
-  //   resume(() => {
-  //     resume(() => ())
-  //   })
-  // }})
-
-  // ERROR: Resume captures resume
-  // val badHandler: FnProducer = new Handler {
-  //   override def handle(x: Unit, resume: (() -> Unit) => Unit): Unit = {
-  //     println("Unsafe handler invoked!")
-  //     resume(() => {
-  //       resume(() => ())
-  //     })
-  //   }
-  // }
-//   val result: Unit = run(goodHandler)(program(5))
-// }
 
 lazy object SmuggledHandlerDemo {
 

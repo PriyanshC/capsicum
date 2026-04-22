@@ -1,7 +1,6 @@
 package capsicum
 
 import language.experimental.captureChecking
-import capsicum.StateOp._
 
 trait Effect { type Result }
 
@@ -16,6 +15,7 @@ object Capability {
 }
 
 // note to self: check against `prog ?-> P`
+// note to self: find an example explicitly prohibited by prog^{handler}
 def run[E <: Effect, P, R](handler: Capability[E, P, R]^)(prog: (Capability[E, P, R]^{handler}) ?-> R): R = prog(using handler)
 
 
@@ -32,8 +32,8 @@ trait StateCapability[S, R] extends Capability[StateEff[S], R, R]:
 
 class MutableStateHandler[S, R](private var state: S) extends StateCapability[S, R] {
   override def perform(eff: StateEff[S], resume: eff.Result => R): R = eff match
-    case Get() => resume.asInstanceOf[S => R](state)
-    case Put(newState) => {
+    case StateOp.Get() => resume.asInstanceOf[S => R](state)
+    case StateOp.Put(newState) => {
       state = newState
       resume.asInstanceOf[Unit => R](())
     }
