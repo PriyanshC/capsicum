@@ -12,8 +12,8 @@ trait Capability[E <: Effect, P, R]() extends BaseCapability[E, P, R] with caps.
 
 object Capability {
   def apply[E <: Effect, P, R, C^](f: ([V] => (E, (V => P)) => R)^{C}): Capability[E, P, R]^{C} = new Capability[E, P, R] {
-      def perform(eff: E, resume: eff.Result => P): R = f(eff, resume)
-    }
+    def perform(eff: E, resume: eff.Result => P): R = f(eff, resume)
+  }
 }
 
 type UniformCapability[E <: Effect, R] = Capability[E, R, R]

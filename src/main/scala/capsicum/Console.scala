@@ -15,13 +15,13 @@ trait ConsoleCapability[R] extends UniformCapability[ConsoleEff, R] {
 }
 
 class StdConsoleHandler[R] extends ConsoleCapability[R] {
-    override def perform(eff: ConsoleEff, resume: eff.Result => R): R = eff match
-        case ConsoleOp.Print(s) => {
-            scala.Console.print(s)
-            resume.asInstanceOf[Unit => R](())
-        }
-        case ConsoleOp.ReadLine() => {
-            val s = scala.io.StdIn.readLine()
-            resume.asInstanceOf[String => R](s)
-        }    
+  override def perform(eff: ConsoleEff, resume: eff.Result => R): R = eff match
+  case ConsoleOp.Print(s) => {
+    scala.Console.print(s)
+    resume.asInstanceOf[Unit => R](())
+  }
+  case ConsoleOp.ReadLine() => {
+    val s = scala.io.StdIn.readLine()
+    resume.asInstanceOf[String => R](s)
+  }    
 }

@@ -9,15 +9,16 @@ object StateOp {
   case class Put[S](value: S) extends StateEff[S] { type Result = Unit }
 }
 
-trait StateCapability[S, R] extends Capability[StateEff[S], R, R]:
+trait StateCapability[S, R] extends Capability[StateEff[S], R, R] {
   final def get(resume: S => R): R = perform(StateOp.Get(), resume)
   final def put(newState: S, resume: Unit => R): R = perform(StateOp.Put(newState), resume)
+}
 
 class MutableStateHandler[S, R](private var state: S) extends StateCapability[S, R] {
   override def perform(eff: StateEff[S], resume: eff.Result => R): R = eff match
-    case StateOp.Get() => resume.asInstanceOf[S => R](state)
-    case StateOp.Put(newState) => {
-      state = newState
-      resume.asInstanceOf[Unit => R](())
-    }
+  case StateOp.Get() => resume.asInstanceOf[S => R](state)
+  case StateOp.Put(newState) => {
+    state = newState
+    resume.asInstanceOf[Unit => R](())
+  }
 }
