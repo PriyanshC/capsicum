@@ -69,32 +69,32 @@ lazy object ContinuationLeakDemo {
 //   val result: Unit = run(goodHandler)(program(5))
 // }
 
-// lazy object SmuggledHandlerDemo {
-//   type IntProducer = Handler[Unit, Int, Unit, Unit]
+lazy object SmuggledHandlerDemo {
 
-//   var handlerStorage: Option[IntProducer^] = None
+  type MyCap = ProducerCapability[Unit -> Unit, Unit]
 
-//   val goodHandler: IntProducer^ = Handler({_ => { resume => resume(5)}})
+  var smuggledStorage: Option[MyCap] = None
 
-//   val naughtyProgram: IntProducer ?-> Unit = {
-//     val h: IntProducer^ = summon[IntProducer^]
-//     // handlerStorage = Some(h) // ERROR: Leak the handler itself
-//   }
-
-//   val result = run(goodHandler)(naughtyProgram)
-//   // val smuggledHandler: IntProducer = handlerStorage.get // Use the handler
-// }
+  def naughtyProgram(): MyCap ?-> Unit = {
+    val handler = summon[MyCap]
+    handler.perform(ProduceOp.GetValue(), { (f: Unit -> Unit) =>
+        // ERROR: Note that capability `handler` cannot flow into capture set
+        // because handler in an enclosing function is not visible from any in variable smuggledStorage.
+        // smuggledStorage = Some(handler)
+    })
+  }
+}
 
 lazy object SmuggledHandlerFnDemo {
 
-  var fnStorage: Option[() => Unit] = None
+  var smuggledStorage: Option[() => Unit] = None
 
   def naughtyProgram(): ProducerCapability[Unit -> Unit, Unit] ?-> Unit = {
     val handler = summon[ProducerCapability[Unit -> Unit, Unit]]
     handler.perform(ProduceOp.GetValue(), { (f: Unit -> Unit) =>
         // ERROR: Note that capability `handler` cannot flow into capture set
-        // because handler in an enclosing function is not visible from any in variable fnStorage
-        // fnStorage = Some(
+        // because handler in an enclosing function is not visible from any in variable smuggledStorage
+        // smuggledStorage = Some(
         //     () => {
         //         handler.perform(ProduceOp.GetValue(), ???)
         //     }
