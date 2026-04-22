@@ -3,11 +3,6 @@ package capsicum.demo
 import scala.language.experimental.captureChecking
 import capsicum._
 
-import capsicum.demo.ContinuationLeakDemo.ProducerCapability
-import capsicum.demo.ContinuationLeakDemo.ProduceOp
-import capsicum.demo.ContinuationLeakDemo.ProduceOp.GetValue
-import capsicum.demo.ContinuationLeakDemo.UnsafeProducer
-import capsicum.demo.ContinuationLeakDemo.GoodProducer
 
 lazy object ContinuationLeakDemo {
     sealed trait ProduceOp[A] extends Effect { type V = A }
@@ -20,19 +15,17 @@ lazy object ContinuationLeakDemo {
         def produce(resume: A -> R): R = perform(ProduceOp.GetValue(), resume)
     }
 
-    class GoodProducer[R] extends ProducerCapability[Unit -> Unit, R] {
-
+    class GoodHandler[R] extends ProducerCapability[Unit -> Unit, R] {
       override def perform(op: ProduceOp[Unit -> Unit], resume: op.V => R): R = op match
-        case GetValue() => {
+        case ProduceOp.GetValue() => {
             println("Good handler invoked!")
             resume(_ => ())
         }
     }
 
-    class UnsafeProducer[R] extends ProducerCapability[Unit -> Unit, R] {
-
+    class UnsafeHandler[R] extends ProducerCapability[Unit -> Unit, R] {
       override def perform(op: ProduceOp[Unit -> Unit], resume: op.V => R): R = op match
-        case GetValue() => {
+        case ProduceOp.GetValue() => {
             // Note: Removing {resume} yields the same error as below, but now earlier
             val leakingInner: Unit ->{resume} Unit = { (_: Unit) =>
                 resume(_ => ())
@@ -45,7 +38,6 @@ lazy object ContinuationLeakDemo {
             ???
         }
       }
-    }
 
     def program(n: Int): ProducerCapability[Unit -> Unit, Unit] ?-> Unit = {
         val r = summon[ProducerCapability[Unit -> Unit, Unit]].perform(ProduceOp.GetValue(), { (f: Unit -> Unit) => 
@@ -53,7 +45,8 @@ lazy object ContinuationLeakDemo {
         })
     }
 
-    val result1 = program(3)(using new GoodProducer[Unit])
+    val result1 = program(3)(using new GoodHandler[Unit])
+}
 
   // ERROR: (only if resume is defined as capturing, is this right?)
   // val badHandler: FnProducer = Handler({_ => { resume => 
