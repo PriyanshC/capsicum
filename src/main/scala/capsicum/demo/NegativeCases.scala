@@ -3,26 +3,26 @@ package capsicum.demo
 import scala.language.experimental.captureChecking
 import capsicum._
 
+sealed trait ProduceOp[A] extends Effect { type V = A }
+
+object ProduceOp {
+    case class GetValue[A]() extends ProduceOp[A]
+}
+
+trait ProducerCapability[A, R] extends Capability[ProduceOp[A], R, R] {
+    final def produce(resume: A -> R): R = perform(ProduceOp.GetValue(), resume)
+}
+
+// Always provides no-op and prints!
+class GoodHandler[R] extends ProducerCapability[Unit -> Unit, R] {
+    override def perform(op: ProduceOp[Unit -> Unit], resume: op.V => R): R = op match
+    case ProduceOp.GetValue() => {
+        println("Good handler invoked!")
+        resume(_ => ())
+    }
+}
 
 lazy object ContinuationLeakDemo {
-    sealed trait ProduceOp[A] extends Effect { type V = A }
-
-    object ProduceOp {
-        case class GetValue[A]() extends ProduceOp[A]
-    }
-
-    trait ProducerCapability[A, R] extends Capability[ProduceOp[A], R, R] {
-        def produce(resume: A -> R): R = perform(ProduceOp.GetValue(), resume)
-    }
-
-    class GoodHandler[R] extends ProducerCapability[Unit -> Unit, R] {
-      override def perform(op: ProduceOp[Unit -> Unit], resume: op.V => R): R = op match
-        case ProduceOp.GetValue() => {
-            println("Good handler invoked!")
-            resume(_ => ())
-        }
-    }
-
     class UnsafeHandler[R] extends ProducerCapability[Unit -> Unit, R] {
       override def perform(op: ProduceOp[Unit -> Unit], resume: op.V => R): R = op match
         case ProduceOp.GetValue() => {
@@ -39,13 +39,14 @@ lazy object ContinuationLeakDemo {
         }
       }
 
-    def program(n: Int): ProducerCapability[Unit -> Unit, Unit] ?-> Unit = {
-        val r = summon[ProducerCapability[Unit -> Unit, Unit]].perform(ProduceOp.GetValue(), { (f: Unit -> Unit) => 
-            (1 to n).foreach(_ => f)
-        })
-    }
+    // TODO not in this obj?
+    // def program(n: Int): ProducerCapability[Unit -> Unit, Unit] ?-> Unit = {
+    //     val r = summon[ProducerCapability[Unit -> Unit, Unit]].perform(ProduceOp.GetValue(), { (f: Unit -> Unit) => 
+    //         (1 to n).foreach(_ => f)
+    //     })
+    // }
 
-    val result1 = program(3)(using new GoodHandler[Unit])
+    // val result1 = program(3)(using new GoodHandler[Unit])
 }
 
   // ERROR: (only if resume is defined as capturing, is this right?)
@@ -84,20 +85,20 @@ lazy object ContinuationLeakDemo {
 //   // val smuggledHandler: IntProducer = handlerStorage.get // Use the handler
 // }
 
-// lazy object SmuggledHandlerFnDemo {
-//   type IntProducer = Handler[Unit, Int, Unit, Unit]
+lazy object SmuggledHandlerFnDemo {
 
-//   var fnStorage: Option[() => Unit] = None
+  var fnStorage: Option[() => Unit] = None
 
-//   val goodHandler: IntProducer = Handler({_ => { resume => resume(5)}})
-
-//   val naughtyProgram: IntProducer ?-> Unit = {
-//     val h = summon[IntProducer]
-//     // fnStorage = Some(() => h.handle((), _ => ())) // ERROR: Leak the handle function
-//   }
-
-//   val result = run(goodHandler)(naughtyProgram)
-//   // val smuggledFn = fnStorage.get
-//   // smuggledFn()
-// }
-
+  def naughtyProgram(): ProducerCapability[Unit -> Unit, Unit] ?-> Unit = {
+    val handler = summon[ProducerCapability[Unit -> Unit, Unit]]
+    handler.perform(ProduceOp.GetValue(), { (f: Unit -> Unit) =>
+        // ERROR: Note that capability `handler` cannot flow into capture set
+        // because handler in an enclosing function is not visible from any in variable fnStorage
+        // fnStorage = Some(
+        //     () => {
+        //         handler.perform(ProduceOp.GetValue(), ???)
+        //     }
+        // )
+    })
+  }
+}
