@@ -19,7 +19,7 @@ object Capability {
 type UniformCapability[E <: Effect, R] = Capability[E, R, R]
 
 trait TailResumptiveCap[E <: Effect, R] extends UniformCapability[E, R] {
-  def eval(eff: E): eff.Result
+  protected def eval(eff: E): eff.Result
   
   // inline?
   final def perform(eff: E, resume: eff.Result => R): R = resume(eval(eff))
