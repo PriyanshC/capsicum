@@ -5,4 +5,5 @@ import capsicum.demo._
 
 object Main extends App {
   println(s"basicState output = ${basicState()}")
+  println(s"basicException = ${basicException(true)}")
 }
