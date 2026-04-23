@@ -25,6 +25,17 @@ trait TailResumptiveCap[E <: Effect, R] extends UniformCapability[E, R] {
   final def perform(eff: E, resume: eff.Result => R): R = resume(eval(eff))
 }
 
+private trait Parameterless[V] extends Effect { type Result = V }
+
+trait MonoCapability[V, P, R] extends Capability[Parameterless[V], P, R] {
+  def perform(resume: V => P): R
+  final override def perform(eff: Parameterless[V], resume: eff.Result => P): R = perform(resume)
+}
+
+
 // note to self: check against `prog ?-> P`
 // note to self: find an example explicitly prohibited by prog^{handler}
 def run[E <: Effect, K <: Capability[E, P, R], P, R](handler: K^)(prog: (K^{handler}) ?-> R): R = prog(using handler)
+
+// alt?
+// def run[E <: Effect, K <: Capability[E, P, R], P, R, C^](handler: K^{C})(prog: (K^{handler, C}) ?-> R): R = prog(using handler)
