@@ -15,7 +15,7 @@ trait StateCapability[S, R] extends UniformCapability[StateEff[S], R] {
 }
 
 class MutableStateHandler[S, R](private var state: S) extends StateCapability[S, R] {
-  override def perform(eff: StateEff[S], resume: eff.Result => R): R = eff match
+  override def perform(eff: StateEff[S], resume: eff.Result => R): R^{this} = eff match
   case StateOp.Get() => resume.asInstanceOf[S => R](state)
   case StateOp.Put(newState) => {
     state = newState
