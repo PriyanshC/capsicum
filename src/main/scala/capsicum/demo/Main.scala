@@ -4,4 +4,5 @@ import language.experimental.captureChecking
 import capsicum.demo._
 
 object Main extends App {
+  println(s"basicState output = ${basicState()}")
 }

@@ -27,4 +27,4 @@ trait TailResumptiveCap[E <: Effect, R] extends UniformCapability[E, R] {
 
 // note to self: check against `prog ?-> P`
 // note to self: find an example explicitly prohibited by prog^{handler}
-def run[E <: Effect, P, R](handler: Capability[E, P, R]^)(prog: (Capability[E, P, R]^{handler}) ?-> R): R = prog(using handler)
+def run[E <: Effect, K <: Capability[E, P, R], P, R](handler: K^)(prog: (K^{handler}) ?-> R): R = prog(using handler)
