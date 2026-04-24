@@ -1,6 +1,7 @@
 package capsicum.benchmark
 
 import capsicum.core._
+import capsicum.examples.NQueensBacktracking
 import language.experimental.captureChecking
 
 object NQueensBenchmark {
@@ -17,7 +18,6 @@ object NQueensBenchmark {
         Seq(queens.reverse)
       } else {
         val safeCols = (0 until n).filter(c => isSafe(c, queens))
-        // Vanilla Scala uses standard flatMap over the choices
         safeCols.flatMap(col => placeQueens(k + 1, col :: queens))
       }
     }
@@ -25,6 +25,7 @@ object NQueensBenchmark {
     placeQueens(0, Nil)
   }
 
+  def nQueensEffect = NQueensBacktracking.solve
 
   // --- Benchmarking Utilities ---
   
