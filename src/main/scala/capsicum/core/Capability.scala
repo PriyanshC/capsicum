@@ -4,11 +4,13 @@ import language.experimental.captureChecking
 
 trait Effect { type Result }
 
-sealed trait BaseCapability[E <: Effect, P, R]() {
+sealed trait BaseCapability[-E <: Effect, -P, +R]() {
   def perform(eff: E, resume: eff.Result => P): R
 }
 
-trait Capability[E <: Effect, P, R]() extends BaseCapability[E, P, R] with caps.ExclusiveCapability
+
+trait Capability[-E <: Effect, -P, +R]() extends BaseCapability[E, P, R]
+// with caps.ExclusiveCapability
 
 object Capability {
   def apply[E <: Effect, P, R, C^](f: ([V] => (E, (V => P)) => R)^{C}): Capability[E, P, R]^{C} = new Capability[E, P, R] {
@@ -16,9 +18,9 @@ object Capability {
   }
 }
 
-type UniformCapability[E <: Effect, R] = Capability[E, R, R]
+type UniformCapability[-E <: Effect, R] = Capability[E, R, R]
 
-trait TailResumptiveCap[E <: Effect, R] extends UniformCapability[E, R] {
+trait TailResumptiveCap[-E <: Effect, R] extends UniformCapability[E, R] {
   protected def eval(eff: E): eff.Result
   
   // inline?
@@ -27,7 +29,7 @@ trait TailResumptiveCap[E <: Effect, R] extends UniformCapability[E, R] {
 
 private trait Parameterless[V] extends Effect { type Result = V }
 
-trait MonoCapability[V, P, R] extends Capability[Parameterless[V], P, R] {
+trait MonoCapability[V, -P, +R] extends Capability[Parameterless[V], P, R] {
   def perform(resume: V => P): R
   final override def perform(eff: Parameterless[V], resume: eff.Result => P): R = perform(resume)
 }
