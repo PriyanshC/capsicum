@@ -1,6 +1,6 @@
-package capsicum.demo
+package capsicum.benchmark
 
-import capsicum._
+// import capsicum._
 import language.experimental.captureChecking
 
 object NQueensBenchmark {

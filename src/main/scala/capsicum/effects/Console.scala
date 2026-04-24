@@ -1,5 +1,6 @@
-package capsicum
+package capsicum.effects
 
+import capsicum.core._
 import language.experimental.captureChecking
 
 sealed trait ConsoleEff extends Effect

@@ -1,4 +1,4 @@
-package capsicum.demo
+package capsicum.neg
 
 import capsicum._
 import scala.language.experimental.captureChecking

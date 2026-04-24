@@ -1,4 +1,4 @@
-package capsicum
+package capsicum.core
 
 import language.experimental.captureChecking
 

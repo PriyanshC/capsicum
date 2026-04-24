@@ -1,6 +1,7 @@
-package capsicum.demo
+package capsicum.examples
 
-import capsicum._
+import capsicum.core._
+import capsicum.effects._
 import language.experimental.captureChecking
 
 def basicState(): Int = {
