@@ -7,7 +7,7 @@ libraryDependencies += "io.getkyo" %% "kyo-prelude" % kyoVersion
 libraryDependencies += "io.getkyo" %% "kyo-core"    % kyoVersion
 
 scalacOptions ++= {
-  if (sys.env.contains("DEBUG") || true)
+  if (sys.env.contains("DEBUG"))
     Seq("-Ycc-debug")
   else
     Seq.empty
