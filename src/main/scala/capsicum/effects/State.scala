@@ -10,7 +10,7 @@ object StateOp {
   case class Put[S](value: S) extends StateEff[S] { type Result = Unit }
 }
 
-trait StateCapability[S, R] extends UniformCapability[StateEff[S], R] {
+trait StateCapability[S, R] extends MonoCapability[StateEff[S], R] {
   final def get(resume: S => R): R = perform(StateOp.Get(), resume)
   final def put(newState: S, resume: Unit => R): R = perform(StateOp.Put(newState), resume)
 }
