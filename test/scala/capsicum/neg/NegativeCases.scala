@@ -1,6 +1,6 @@
 package capsicum.neg
 
-import capsicum._
+import capsicum.core._
 import scala.language.experimental.captureChecking
 
 sealed trait ProduceOp[A] extends Effect { type Result = A }
