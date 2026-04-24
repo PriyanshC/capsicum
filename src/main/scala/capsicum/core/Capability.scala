@@ -5,8 +5,17 @@ import language.experimental.captureChecking
 /**
  * An effect that can be performed, with an associated result type.
  */
+/**
+ * An effect that can be performed, with an associated result type.
+ */
 trait Effect { type Result }
 
+/**
+ * Base trait for capabilities that can perform effects.
+ * @tparam E the effect type
+ * @tparam P the parameter type for the result of resumption
+ * @tparam R the final return type
+ */
 /**
  * Base trait for capabilities that can perform effects.
  * @tparam E the effect type
@@ -23,13 +32,31 @@ sealed trait BaseCapability[-E <: Effect, -P, +R]() {
  * @tparam P the parameter type for the result of resumption
  * @tparam R the final return type
  */
+/**
+ * Trait for capabilities that can perform effects.
+ * @tparam E the effect type
+ * @tparam P the parameter type for the result of resumption
+ * @tparam R the final return type
+ */
 trait Capability[-E <: Effect, -P, +R]() extends BaseCapability[E, P, R]
 // with caps.ExclusiveCapability
 
 /**
  * Companion object for `Capability`.
  */
+/**
+ * Companion object for `Capability`.
+ */
 object Capability {
+  /**
+   * Creates a new [[Capability]] from a function.
+   * @param f the function that implements the capability
+   * @tparam E the effect type
+   * @tparam P the parameter type for the result of resumption
+   * @tparam R the final return type
+   * @tparam C the capture set
+   * @return a new Capability instance
+   */
   /**
    * Creates a new [[Capability]] from a function.
    * @param f the function that implements the capability
@@ -49,14 +76,14 @@ object Capability {
  * @tparam E the effect type
  * @tparam R the uniform type
  */
-type UniformCapability[-E <: Effect, R] = Capability[E, R, R]
+type MonoCapability[-E <: Effect, R] = Capability[E, R, R]
 
 /**
  * A capability that evaluates effects directly and resumes.
  * @tparam E the effect type
  * @tparam R the final return type
  */
-trait TailResumptiveCap[-E <: Effect, R] extends UniformCapability[E, R] {
+trait DirectCapability[-E <: Effect, R] extends MonoCapability[E, R] {
   /**
    * Evaluates the effect to get its result.
    * @param eff the effect to evaluate
@@ -73,7 +100,7 @@ trait TailResumptiveCap[-E <: Effect, R] extends UniformCapability[E, R] {
  * Used for single-effect handlers in conjunction with [[MonoCapability]].
  * @tparam V the result type
  */
-private trait Parameterless[V] extends Effect { type Result = V }
+private final class Parameterless[V] extends Effect { type Result = V }
 
 /**
  * A capability for parameterless effects.
@@ -81,14 +108,16 @@ private trait Parameterless[V] extends Effect { type Result = V }
  * @tparam P the parameter type for the result of resumption
  * @tparam R the return type
  */
-trait MonoCapability[V, -P, +R] extends Capability[Parameterless[V], P, R] {
+trait NullaryCapability[V, -P, +R] extends Capability[Parameterless[V], P, R] {
   /**
    * Performs the capability with a resume function.
    * @param resume the resume function
    * @return the result
    */
-  def perform(resume: V => P): R
-  final override def perform(eff: Parameterless[V], resume: eff.Result => P): R = perform(resume)
+  def apply(resume: V => P): R
+
+  @deprecated("Use apply(resume)")
+  final override def perform(eff: Parameterless[V], resume: eff.Result => P): R = apply(resume)
 }
 
 /**

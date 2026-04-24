@@ -8,7 +8,7 @@ import language.experimental.captureChecking
 def drunkToss(): Either[String, Boolean] = {
   case class RandomBool() extends Effect { type Result = Boolean }
   
-  trait RandCapability[R] extends UniformCapability[RandomBool, R] {
+  trait RandCapability[R] extends MonoCapability[RandomBool, R] {
     final def flip(resume: Boolean => R): R = perform(RandomBool(), resume)
   }
   
