@@ -5,17 +5,8 @@ import language.experimental.captureChecking
 /**
  * An effect that can be performed, with an associated result type.
  */
-/**
- * An effect that can be performed, with an associated result type.
- */
 trait Effect { type Result }
 
-/**
- * Base trait for capabilities that can perform effects.
- * @tparam E the effect type
- * @tparam P the parameter type for the result of resumption
- * @tparam R the final return type
- */
 /**
  * Base trait for capabilities that can perform effects.
  * @tparam E the effect type
@@ -32,31 +23,14 @@ sealed trait BaseCapability[-E <: Effect, -P, +R]() {
  * @tparam P the parameter type for the result of resumption
  * @tparam R the final return type
  */
-/**
- * Trait for capabilities that can perform effects.
- * @tparam E the effect type
- * @tparam P the parameter type for the result of resumption
- * @tparam R the final return type
- */
 trait Capability[-E <: Effect, -P, +R]() extends BaseCapability[E, P, R]
 // with caps.ExclusiveCapability
 
 /**
  * Companion object for `Capability`.
  */
-/**
- * Companion object for `Capability`.
- */
 object Capability {
-  /**
-   * Creates a new [[Capability]] from a function.
-   * @param f the function that implements the capability
-   * @tparam E the effect type
-   * @tparam P the parameter type for the result of resumption
-   * @tparam R the final return type
-   * @tparam C the capture set
-   * @return a new Capability instance
-   */
+  
   /**
    * Creates a new [[Capability]] from a function.
    * @param f the function that implements the capability
