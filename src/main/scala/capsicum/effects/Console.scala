@@ -10,7 +10,7 @@ object ConsoleOp {
   case class ReadLine() extends ConsoleEff[String]
 }
 
-trait ConsoleCapability[R] extends SharedCapability[ConsoleEff, R, R] {
+trait ConsoleCapability[R] extends Capability[ConsoleEff, R, R] {
   final def print(s: String, resume: Unit => R): R = perform(ConsoleOp.Print(s), resume)
   final def readLine(resume: String => R): R = perform(ConsoleOp.ReadLine(), resume)
 }

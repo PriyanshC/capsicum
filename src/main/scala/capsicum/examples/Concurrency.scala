@@ -19,7 +19,5 @@ def basicAsyncProgram(): Unit = {
   }
   
   val handler = new LoomAsyncHandler[Unit]()
-  run[AsyncEff, AsyncCapability[Unit], Unit, Unit](handler) {
-    prog(using summon[AsyncCapability[Unit]])
-  }
+  prog(using handler)
 }

@@ -2,6 +2,8 @@ package capsicum.effects
 
 import capsicum.core._
 import language.experimental.captureChecking
+import capsicum.effects.AsyncOp.Fork
+import capsicum.effects.AsyncOp.Join
 
 sealed trait AsyncEff[V] extends Effect[V]
 
@@ -21,22 +23,20 @@ object Fiber {
   }
 }
 
-trait AsyncCapability[R] extends SharedCapability[AsyncEff, R, R] {
+trait AsyncCapability[R] extends Capability[AsyncEff, R, R] {
   final def fork[T](task: () -> T, resume: Fiber[T] => R): R = perform(AsyncOp.Fork(task), resume)
-  
   final def join[T](fiber: Fiber[T], resume: T => R): R = perform(AsyncOp.Join(fiber), resume)
 }
 
 
 class LoomAsyncHandler[R] extends AsyncCapability[R] {
-  override def perform[V, T](eff: AsyncEff[V], resume: V => R): R = eff match {
-    case AsyncOp.Fork[T](task) => {
-      val promise = new java.util.concurrent.CompletableFuture[T]()
-      
+
+  override def perform[V](eff: AsyncEff[V], resume: V => R): R = eff match
+    case f: Fork[t] => {
+      val promise = new java.util.concurrent.CompletableFuture[t]()
       Thread.ofVirtual().start(() => {
         try {
-          val result = task()
-          promise.complete(result)
+          promise.complete(f.task())
         } catch {
           case e: Throwable => promise.completeExceptionally(e)
         }
@@ -45,10 +45,5 @@ class LoomAsyncHandler[R] extends AsyncCapability[R] {
       val fiber = Fiber(promise)
       resume(fiber)
     }
-    
-    case AsyncOp.Join(fiber) => {
-      val result = fiber.get() 
-      resume(result)
-    }
-  }
+    case Join(fiber) => resume(fiber.get())
 }

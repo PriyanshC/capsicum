@@ -13,18 +13,18 @@ trait Effect[V]
 * @tparam P the parameter type for the result of resumption
 * @tparam R the final return type
 */
-sealed trait Capability[-E <: Effect, -P, +R]() {
+sealed trait BaseCapability[-E <: Effect, -P, +R]() {
   def perform[V](eff: E[V], resume: V => P): R
 }
 
-trait ExclusiveCapability[-E <: Effect, -P, +R]() extends Capability[E, P, R] with caps.ExclusiveCapability
-trait SharedCapability[-E <: Effect, -P, +R]() extends Capability[E, P, R] with caps.SharedCapability
+trait Capability[-E <: Effect, -P, +R]() extends BaseCapability[E, P, R] with caps.SharedCapability
+trait UniqueCapability[-E <: Effect, -P, +R]() extends BaseCapability[E, P, R] with caps.ExclusiveCapability
 
 
 /**
 * Companion object for `Capability`.
 */
-object Capability {
+object BaseCapability {
   // /**
   //  * Creates a new [[Capability]] from a function.
   //  * @param f the function that implements the capability
@@ -44,7 +44,7 @@ object Capability {
 * @tparam E the effect type
 * @tparam R the uniform type
 */
-type MonoCapability[-E <: Effect, R] = Capability[E, R, R]
+type MonoCapability[-E <: Effect, R] = BaseCapability[E, R, R]
 
 
 trait DirectCap[-E <: Effect, R] {
@@ -54,7 +54,7 @@ trait DirectCap[-E <: Effect, R] {
 }
 
 trait NullaryCap[-E <: Effect, P, R] {
-  this: Capability[E, P, R] =>
+  this: BaseCapability[E, P, R] =>
     def perform[V](resume: V => P): R
     final override def perform[V](eff: E[V], resume: V => P): R = perform(resume)
 }
