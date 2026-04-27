@@ -5,26 +5,22 @@ import capsicum.effects._
 import language.experimental.captureChecking
 
 object NQueensBacktracking {
+  case class Choose[V](choices: Seq[V]) extends Effect[V]
+      
+  trait AmbCapability[R] extends Capability[Choose, R, R] {
+    final def choose(choices: Seq[Int])(resume: Int => R): R = perform(Choose(choices), resume)
+  }
+
+  type Placed = List[Int]
+
   def solve(n: Int): Seq[List[Int]] = {
-    case class Choose[V](choices: Seq[Int]) extends Effect[Int]
-    
-    trait AmbCapability[R, V] extends ExclusiveCapability[Choose, R, R] {
-      final def choose(choices: Seq[Int])(resume: Int => R): R = perform(Choose(choices), resume)
-    }
-    
-    type R = Seq[List[Int]]
-    
-    val listBacktracker = new AmbCapability[R, Int] {
-      override def perform(eff: Choose[Int], resume: Int => R): R = eff.choices.flatMap(resume)
-    }
-    
     def isSafe(col: Int, queens: List[Int]): Boolean = {
       queens.zip(LazyList.from(1)).forall { case (c, deltaRow) =>
         c != col && math.abs(c - col) != deltaRow
       }
     }
     
-    def placeQueens(k: Int, queens: List[Int])(using amb: AmbCapability[R, Int]): R = {
+    def placeQueens(k: Int, queens: List[Int])(using amb: AmbCapability[Seq[Placed]]): Seq[Placed] = {
       if (k == n) {
         Seq(queens.reverse)
       } else {
@@ -34,6 +30,10 @@ object NQueensBacktracking {
           placeQueens(k + 1, col :: queens)
         }
       }
+    }
+
+    val listBacktracker = new AmbCapability[Seq[Placed]] {
+      override def perform[V](eff: Choose[V], resume: V => Seq[Placed]): Seq[Placed] = eff.choices.flatMap(resume)
     }
     
     placeQueens(0, Nil)(using listBacktracker)
