@@ -3,39 +3,40 @@ package capsicum.neg
 import capsicum.core._
 import scala.language.experimental.captureChecking
 
-sealed trait ProduceOp[A] extends Effect { type Result = A }
+sealed trait ProduceOp[A, V] extends Effect[V]
 
 object ProduceOp {
-  case class GetValue[A]() extends ProduceOp[A]
+  case class GetValue[A]() extends ProduceOp[A, A]
 }
 
-trait ProducerCapability[A, R] extends Capability[ProduceOp[A], R, R] {
+trait ProducerCapability[A, R] extends Capability[[V] =>> ProduceOp[A, V], R, R] {
   final def produce(resume: A -> R): R = perform(ProduceOp.GetValue(), resume)
 }
 
 // Always provides no-op and prints!
 class GoodHandler[R] extends ProducerCapability[Unit -> Unit, R] {
-  override def perform(op: ProduceOp[Unit -> Unit], resume: op.Result => R): R = op match
+  override def perform[V](op: ProduceOp[Unit -> Unit, V], resume: V => R): R = op match
   case ProduceOp.GetValue() => {
     println("Good handler invoked!")
-    resume(_ => ())
+    val noop: Unit -> Unit = _ => ()
+    resume(noop)
   }
 }
 
 lazy object ContinuationLeakDemo {
   class UnsafeHandler[R] extends ProducerCapability[Unit -> Unit, R] {
-    override def perform(op: ProduceOp[Unit -> Unit], resume: op.Result => R): R = op match
+    override def perform[V](op: ProduceOp[Unit -> Unit, V], resume: V => R): R = op match
     case ProduceOp.GetValue() => {
       /* Note: Removing ^{resume} yields the same error as below, but now earlier */
       val leakingInner: Unit ->{resume} Unit = { (_: Unit) =>
-        resume(_ => ())
+        resume((_: Unit) => ())
         println("Unsafe handler invoked!")
       }
       
       /* ERROR: Capability `resume` cannot flow into capture set {} */
-      // resume(leakingInner)
+      resume(leakingInner) // NOT ERROR! BAD!
       
-      ???
+      // ???
     }
   }
 }
