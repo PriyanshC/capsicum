@@ -6,16 +6,19 @@ import language.experimental.captureChecking
 
 
 def drunkToss(): Either[String, Boolean] = {
-  case class RandomBool() extends Effect { type Result = Boolean }
+  sealed trait Random[V] extends Effect[V]
+  case class RBool() extends Random[Boolean]
   
-  trait RandCapability[R] extends MonoCapability[RandomBool, R] {
-    final def flip(resume: Boolean => R): R = perform(RandomBool(), resume)
+  trait RandCapability[R] extends MonoCapability[Random, R] {
+    final def flip(resume: Boolean => R): R = perform(RBool(), resume)
   }
   
   type R = Either[String, Boolean]
   
   val alwaysTrue = new RandCapability[R] {
-    override def perform(eff: RandomBool, resume: Boolean => R): R = resume(true)
+
+    override def perform[V](eff: Random[V], resume: V => R): R = eff match
+      case RBool() => resume(true)
   }
   
   val excHandler = new EitherExcHandler[String, Boolean]()
@@ -25,7 +28,8 @@ def drunkToss(): Either[String, Boolean] = {
       if (caught) {
         rand.flip { heads => Right(heads) }
       } else {
-        exc.raise("The coin was dropped")
+        // exc.raise("The coin was dropped")
+        ???
       }
     }
   }

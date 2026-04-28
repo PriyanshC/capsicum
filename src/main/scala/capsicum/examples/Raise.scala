@@ -11,11 +11,12 @@ def basicException(shouldFail: Boolean): Either[String, Int] = {
     val h = summon[RaiseCapability[String, Int, Either[String, Int]]]
     
     if (shouldFail) {
-      h.raise("Failed!")
+      // h.raise("Failed!")
+      ???
     } else {
       Right(1)
     }
   }
   
-  run(handler)(prog())
+  prog()(using handler)
 }
