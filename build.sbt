@@ -11,9 +11,8 @@ javacOptions ++= Seq("-source", "21", "-target", "21")
 scalacOptions ++= {
   if (sys.env.contains("CC_DEBUG")) Seq("-Ycc-debug") else Seq.empty,
 }
-scalacOptions ++= {
-  if (sys.env.contains("DEBUG")) Seq("-explain-types") else Seq.empty,
-}
+
+scalacOptions += "-explain"
 
 scalacOptions ++= Seq("-release", "21")
 
