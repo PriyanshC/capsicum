@@ -49,17 +49,17 @@ trait DirectNullaryCap[R] {
     final override def perform[V](eff: Parameterless[V], resume: V => R): R = perform(resume)
 }
 
-// /**
-// * Runs a program with a given handler.
-// * @param handler the capability handler
-// * @param prog the program to run
-// * @tparam E the effect type
-// * @tparam K the capability type
-// * @tparam P the parameter type for the result of resumption
-// * @tparam R the return type
-// * @return the result of the program
-// */
-// def run[E <: Effect, K <: Capability[E, P, R], P, R](handler: K^)(prog: (K^{handler}) ?-> R): R = prog(using handler)
+/**
+* Runs a program with a given handler.
+* @param handler the capability handler
+* @param prog the program to run
+* @tparam E the effect type
+* @tparam K the capability type
+* @tparam P the parameter type for the result of resumption
+* @tparam R the return type
+* @return the result of the program
+*/
+def run[E <: Effect, K <: Capability[E, P, R], P, R](handler: K^)(prog: (K^{handler}) ?-> R): R = prog(using handler)
 
 // alt?
 // def run[E <: Effect, K <: Capability[E, P, R], P, R, C^](handler: K^{C})(prog: (K^{handler, C}) ?-> R): R = prog(using handler)
