@@ -11,7 +11,7 @@ case class IntBox() extends Param[Int -> Int]
 def withParam[T](p: Param[T], c: Cap): Unit = p match
   case _: IntBox => {
     val f: Int ->{c} Int = x => { println(c); x }
-    val t: T = f // Should error here
+    val t: T = f // Compiles fine
   }
 
 
