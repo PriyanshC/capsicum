@@ -45,7 +45,7 @@ object Capability {
  * @tparam E the effect type
  * @tparam R the uniform type
  */
-type MonoCapability[-E <: Effect, R] = Capability[E, R, R]
+type MonoCapability[-E <: Effect, R] = BaseCapability[E, R, R]
 
 trait DirectCap[-E <: Effect, R] {
   this: MonoCapability[E, R] =>

@@ -21,7 +21,7 @@ object Fiber {
   }
 }
 
-trait AsyncCapability[R] extends MonoCapability[AsyncEff, R] {
+trait AsyncCapability[R] extends Capability[AsyncEff, R, R] {
   final def fork[T](task: () -> T, resume: Fiber[T] => R): R = perform(AsyncOp.Fork(task), resume)
   
   final def join[T](fiber: Fiber[T], resume: T => R): R = perform(AsyncOp.Join(fiber), resume)
