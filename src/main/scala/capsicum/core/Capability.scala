@@ -17,14 +17,9 @@ sealed trait BaseCapability[-E <: Effect, -P, +R]() {
   def perform(eff: E, resume: eff.Result => P): R
 }
 
-/**
- * Trait for capabilities that can perform effects.
- * @tparam E the effect type
- * @tparam P the parameter type for the result of resumption
- * @tparam R the final return type
- */
-trait Capability[-E <: Effect, -P, +R]() extends BaseCapability[E, P, R]
-// with caps.ExclusiveCapability
+trait Capability[-E <: Effect, -P, +R]() extends BaseCapability[E, P, R] with caps.SharedCapability
+trait UniqueCapability[-E <: Effect, -P, +R]() extends BaseCapability[E, P, R] with caps.ExclusiveCapability
+
 
 /**
  * Companion object for `Capability`.
@@ -52,46 +47,26 @@ object Capability {
  */
 type MonoCapability[-E <: Effect, R] = Capability[E, R, R]
 
-/**
- * A capability that evaluates effects directly and resumes.
- * @tparam E the effect type
- * @tparam R the final return type
- */
-trait DirectCapability[-E <: Effect, R] extends MonoCapability[E, R] {
-  /**
-   * Evaluates the effect to get its result.
-   * @param eff the effect to evaluate
-   * @return the result of the effect
-   */
-  protected def eval(eff: E): eff.Result
-  
-  // inline?
-  final def perform(eff: E, resume: eff.Result => R): R = resume(eval(eff))
+trait DirectCap[-E <: Effect, R] {
+  this: MonoCapability[E, R] =>
+    protected def apply(eff: E): eff.Result
+    final override def perform(eff: E, resume: eff.Result => R): R = resume(apply(eff))
 }
 
-/**
- * An effect with no parameters, just a result type.
- * Used for single-effect handlers in conjunction with [[MonoCapability]].
- * @tparam V the result type
- */
-private final class Parameterless[V] extends Effect { type Result = V }
+trait NullaryCap[V, P, R] {
+  this: BaseCapability[Parameterless[V], P, R] =>
+    def perform(resume: V => P): R
+    final override def perform(eff: Parameterless[V], resume: V => P): R = perform(resume)
+}
 
-/**
- * A capability for parameterless effects.
- * @tparam V the result type
- * @tparam P the parameter type for the result of resumption
- * @tparam R the return type
- */
-trait NullaryCapability[V, -P, +R] extends Capability[Parameterless[V], P, R] {
-  /**
-   * Performs the capability with a resume function.
-   * @param resume the resume function
-   * @return the result
-   */
-  def apply(resume: V => P): R
+trait Parameterless[V] extends Effect { type Result = V }
 
-  @deprecated("Use apply(resume)")
-  final override def perform(eff: Parameterless[V], resume: eff.Result => P): R = apply(resume)
+trait DirectNullaryCap[V, R] {
+  this: MonoCapability[Parameterless[V], R] =>
+    protected def apply(): V
+    final def perform(resume: V => R): R = resume(apply())
+    @deprecated("Use perform(resume)")
+    final override def perform(eff: Parameterless[V], resume: V => R): R = perform(resume)
 }
 
 /**
