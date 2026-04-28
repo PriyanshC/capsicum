@@ -40,29 +40,32 @@ object BaseCapability {
 }
 
 /**
-* Type alias for a capability where the resumption's return and final return types are the same.
-* @tparam E the effect type
-* @tparam R the uniform type
-*/
-type MonoCapability[-E <: Effect, R] = BaseCapability[E, R, R]
-
+ * Type alias for a capability where the resumption's return and final return types are the same.
+ * @tparam E the effect type
+ * @tparam R the uniform type
+ */
+type MonoCapability[-E <: Effect, R] = Capability[E, R, R]
 
 trait DirectCap[-E <: Effect, R] {
   this: MonoCapability[E, R] =>
-    protected def apply[V](eff: E[V]): V
-    final override def perform[V](eff: E[V], resume: V => R): R = resume(apply(eff))
+    protected def apply(eff: E): eff.Result
+    final override def perform(eff: E, resume: eff.Result => R): R = resume(apply(eff))
 }
 
-trait NullaryCap[-E <: Effect, P, R] {
-  this: BaseCapability[E, P, R] =>
-    def perform[V](resume: V => P): R
-    final override def perform[V](eff: E[V], resume: V => P): R = perform(resume)
+trait NullaryCap[V, P, R] {
+  this: BaseCapability[Parameterless[V], P, R] =>
+    def perform(resume: V => P): R
+    final override def perform(eff: Parameterless[V], resume: V => P): R = perform(resume)
 }
 
-trait DirectNullaryCap[-E <: Effect, R] {
-  this: MonoCapability[E, R] =>
-    protected def apply[V](): V
-    final override def perform[V](eff: E[V], resume: V => R): R = resume(apply[V]())
+trait Parameterless[V] extends Effect { type Result = V }
+
+trait DirectNullaryCap[V, R] {
+  this: MonoCapability[Parameterless[V], R] =>
+    protected def apply(): V
+    final def perform(resume: V => R): R = resume(apply())
+    @deprecated("Use perform(resume)")
+    final override def perform(eff: Parameterless[V], resume: V => R): R = perform(resume)
 }
 
 // /**
