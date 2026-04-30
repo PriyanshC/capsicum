@@ -10,6 +10,6 @@ trait RaiseCapability[Err, P, R] extends Capability[[V] =>> RaiseEff[Err, V], P,
 }
 
 class EitherExcHandler[Err, R] extends RaiseCapability[Err, R, Either[Err, R]] {
-  def perform[V](eff: RaiseEff[Err, V], resume: V => R): Either[Err, R] = eff match
+  override def perform[V](eff: RaiseEff[Err, V], resume: V => R): Either[Err, R] = eff match
     case RaiseEff(err) => Left(err)
 }

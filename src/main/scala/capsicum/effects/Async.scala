@@ -2,8 +2,6 @@ package capsicum.effects
 
 import capsicum.core._
 import language.experimental.captureChecking
-import capsicum.effects.AsyncOp.Fork
-import capsicum.effects.AsyncOp.Join
 
 sealed trait AsyncEff[V] extends Effect[V]
 
@@ -32,7 +30,7 @@ trait AsyncCapability[R] extends Capability[AsyncEff, R, R] {
 class LoomAsyncHandler[R] extends AsyncCapability[R] {
 
   override def perform[V](eff: AsyncEff[V], resume: V => R): R = eff match
-    case f: Fork[t] => {
+    case f: AsyncOp.Fork[t] => {
       val promise = new java.util.concurrent.CompletableFuture[t]()
       Thread.ofVirtual().start(() => {
         try {
@@ -45,5 +43,5 @@ class LoomAsyncHandler[R] extends AsyncCapability[R] {
       val fiber = Fiber(promise)
       resume(fiber)
     }
-    case Join(fiber) => resume(fiber.get())
+    case AsyncOp.Join(fiber) => resume(fiber.get())
 }
