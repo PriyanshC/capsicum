@@ -8,12 +8,19 @@ class Cap extends caps.SharedCapability
 trait Param[T]
 case class IntBox() extends Param[Int -> Int]
 
-def withParam[T](p: Param[T], c: Cap): Unit = p match
+def match1[T](p: Param[T], c: Cap): T = p match
+  case IntBox => {
+    val f: Int ->{c} Int = x => { println(c); x }
+    val t: T = f // Found:    (f : Int ->{c} Int), Required: T
+    t
+  }
+
+def match2[T](p: Param[T], c: Cap): T = p match
   case _: IntBox => {
     val f: Int ->{c} Int = x => { println(c); x }
     val t: T = f // Compiles fine
+    t
   }
-
 
 
 trait Path { type T }
