@@ -5,36 +5,17 @@ import scala.language.experimental.captureChecking
 
 class Cap extends caps.SharedCapability
 
-trait Param[T]
+sealed trait Param[T]
 case class IntBox() extends Param[Int -> Int]
 
-def match1[T](p: Param[T], c: Cap): T = p match
-  case IntBox => {
+def matcher[T](p: Param[T], c: Cap^): Int -> Int = p match
+  case IntBox() => {
     val f: Int ->{c} Int = x => { println(c); x }
-    val t: T = f // Found:    (f : Int ->{c} Int), Required: T
-    t
+    val t: T = f // Assignment compiles
+    t // Return compiles
   }
 
-def match2[T](p: Param[T], c: Cap): T = p match
-  case _: IntBox => {
-    val f: Int ->{c} Int = x => { println(c); x }
-    val t: T = f // Compiles fine
-    t
-  }
-
-
-trait Path { type T }
-case class IntPath() extends Path { type T = Int -> Int}
-
-def withPathDep(p: Path, c: Cap): Unit = p match
-  case i: IntPath => {
-    val f: Int ->{c} Int = x => { println(c); x }
-
-    /* ERROR: 
-    Found:    (f : Int ->{c} Int)
-    Required: Int -> Int
-
-    Note that capability `c` cannot flow into capture set {}
-    */
-    // val t: i.T = f
-  }
+def userCode[T](p: Param[T], c: Cap): Unit = {
+  val pureFn: Int -> Int = matcher(p, c)
+  val x = pureFn(1)
+}
