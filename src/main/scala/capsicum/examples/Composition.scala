@@ -39,4 +39,6 @@ def drunkToss(): Either[String, Boolean] = {
       prog
     }
   }
+
+  run(alwaysTrue, excHandler)(prog)
 }

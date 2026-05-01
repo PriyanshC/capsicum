@@ -50,4 +50,54 @@ trait DirectNullaryCap[R] {
     final override def perform[V](eff: Parameterless[V], resume: V => R): R = perform(resume)
 }
 
-// def handle[K <: Capability[?, ?, ?], R](handler: K^)(prog: K ?->{handler} R): R = prog(using handler)
+def run[K1 <: BaseCapability[?, ?, R], K2 <: BaseCapability[?, ?, R], R](
+k1: K1, k2: K2
+)(prog: (K1, K2) ?-> R): R = {
+  k1.run {
+    k2.run {
+      prog(using k1, k2)
+    }
+  }
+}
+
+def run[K1 <: BaseCapability[?, ?, R], K2 <: BaseCapability[?, ?, R], K3 <: BaseCapability[?, ?, R], R](
+k1: K1, k2: K2, k3: K3
+)(prog: (K1, K2, K3) ?-> R): R = {
+  k1.run {
+    k2.run {
+      k3.run {
+        prog(using k1, k2, k3)
+      }
+    }
+  }
+}
+
+def run[K1 <: BaseCapability[?, ?, R], K2 <: BaseCapability[?, ?, R], K3 <: BaseCapability[?, ?, R], K4 <: BaseCapability[?, ?, R], R](
+k1: K1, k2: K2, k3: K3, k4: K4
+)(prog: (K1, K2, K3, K4) ?-> R): R = {
+  k1.run {
+    k2.run {
+      k3.run {
+        k4.run {
+          prog(using k1, k2, k3, k4)
+        }
+      }
+    }
+  }
+}
+
+def run[K1 <: BaseCapability[?, ?, R], K2 <: BaseCapability[?, ?, R], K3 <: BaseCapability[?, ?, R], K4 <: BaseCapability[?, ?, R], K5 <: BaseCapability[?, ?, R], R](
+k1: K1, k2: K2, k3: K3, k4: K4, k5: K5
+)(prog: (K1, K2, K3, K4, K5) ?-> R): R = {
+  k1.run {
+    k2.run {
+      k3.run {
+        k4.run {
+          k5.run {
+            prog(using k1, k2, k3, k4, k5)
+          }
+        }
+      }
+    }
+  }
+}
