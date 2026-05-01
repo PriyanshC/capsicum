@@ -36,7 +36,7 @@ object NQueensBacktracking {
       override def perform[V](eff: Choose[V], resume: V => Seq[Placed]): Seq[Placed] = eff.choices.flatMap(resume)
     }
     
-    placeQueens(0, Nil)(using listBacktracker)
+    listBacktracker.run(placeQueens(0, Nil))
   }
   
   def prettyPrint(solutions: Seq[List[Int]]): Unit = {

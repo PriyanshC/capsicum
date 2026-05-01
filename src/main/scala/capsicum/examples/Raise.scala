@@ -18,5 +18,5 @@ def basicException(shouldFail: Boolean): Either[String, Int] = {
     }
   }
   
-  prog()(using handler)
+  handler.run(prog())
 }

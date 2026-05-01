@@ -18,5 +18,5 @@ def basicState(): Int = {
     }
   }
   
-  prog(using handler)
+  handler.run(prog)
 }

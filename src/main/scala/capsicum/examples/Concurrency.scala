@@ -19,5 +19,5 @@ def basicAsyncProgram(): Unit = {
   }
   
   val handler = new LoomAsyncHandler[Unit]()
-  prog(using handler)
+  handler.run(prog)
 }
