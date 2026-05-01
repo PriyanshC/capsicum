@@ -34,11 +34,13 @@ def drunkToss(): Either[String, Boolean] = {
     }
   }
   
-  excHandler.run {
-    alwaysTrue.run {
-      prog
-    }
-  }
+  // Nesting
+  // excHandler.run {
+  //   alwaysTrue.run {
+  //     prog
+  //   }
+  // }
 
+  // Multiple at once
   run(alwaysTrue, excHandler)(prog)
 }
