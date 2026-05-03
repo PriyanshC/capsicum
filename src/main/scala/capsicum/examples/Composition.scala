@@ -15,10 +15,10 @@ def drunkToss(): Either[String, Boolean] = {
   
   type R = Either[String, Boolean]
   
-  val alwaysTrue = new RandCapability[R] {
-
-    override def perform[V](eff: Random[V], resume: V => R): R = eff match
-      case RBool() => resume(true)
+  val alwaysTrue = new RandCapability[R] with DirectCap[Random, R] {
+    protected def apply[V](eff: Random[V]): V = eff match {
+      case RBool() => true
+    }
   }
   
   val excHandler = new EitherExcHandler[String, Boolean]()

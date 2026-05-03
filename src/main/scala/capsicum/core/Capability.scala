@@ -34,21 +34,21 @@ trait DirectCap[-E <: Effect, R] {
     final override def perform[V](eff: E[V], resume: V => R): R = resume(apply(eff))
 }
 
-trait NullaryCap[P, R] {
-  this: BaseCapability[Parameterless, P, R] =>
-    def perform[V](resume: V => P): R
-    final override def perform[V](eff: Parameterless[V], resume: V => P): R = perform(resume)
-}
+// trait NullaryCap[P, R] {
+//   this: BaseCapability[Parameterless, P, R] =>
+//     def perform[V](resume: V => P): R
+//     final override def perform[V](eff: Parameterless[V], resume: V => P): R = perform(resume)
+// }
 
 trait Parameterless[V] extends Effect[V]
 
-trait DirectNullaryCap[R] {
-  this: MonoCapability[Parameterless, R] =>
-    protected def apply[V](): V
-    final def perform[V](resume: V => R): R = resume(apply())
-    @deprecated("Use perform(resume)")
-    final override def perform[V](eff: Parameterless[V], resume: V => R): R = perform(resume)
-}
+// trait DirectNullaryCap[R] {
+//   this: MonoCapability[Parameterless, R] =>
+//     protected def apply[V](): V
+//     final def perform[V](resume: V => R): R = resume(apply())
+//     @deprecated("Use perform(resume)")
+//     final override def perform[V](eff: Parameterless[V], resume: V => R): R = perform(resume)
+// }
 
 def run[K1 <: BaseCapability[?, ?, R], K2 <: BaseCapability[?, ?, R], R](
 k1: K1, k2: K2
