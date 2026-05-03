@@ -47,14 +47,12 @@ trait NullaryCap[V, -P, R] {
   }
 }
 
-
-// trait DirectNullaryCap[R] {
-//   this: MonoCapability[Parameterless, R] =>
-//     protected def apply[V](): V
-//     final def perform[V](resume: V => R): R = resume(apply())
-//     @deprecated("Use perform(resume)")
-//     final override def perform[V](eff: Parameterless[V], resume: V => R): R = perform(resume)
-// }
+trait DirectNullaryCap[V, R] {
+  this: MonoCapability[[X] =>> Nullary[V, X], R] =>
+  protected def apply(): V
+  final override def perform[V0](eff: Nullary[V, V0], resume: V0 => R): R = eff match
+    case Parameterless() => resume(apply())
+}
 
 def run[K1 <: BaseCapability[?, ?, R], K2 <: BaseCapability[?, ?, R], R](
 k1: K1, k2: K2
