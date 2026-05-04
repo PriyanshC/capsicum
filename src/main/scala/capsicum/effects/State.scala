@@ -15,11 +15,8 @@ trait StateCapability[S, R] extends Capability[[V] =>> StateEff[S, V], R, R] {
   final def put(newState: S, resume: Unit => R): R = perform(StateOp.Put(newState), resume)
 }
 
-class MutableStateHandler[S, R](private var state: S) extends StateCapability[S, R] {
-  override def perform[V](eff: StateEff[S, V], resume: V => R): R^{this} = eff match
-  case StateOp.Get() => resume(state)
-  case StateOp.Put(newState) => {
-    state = newState
-    resume(())
-  }
+class MutableStateHandler[S, R](private var state: S) extends StateCapability[S, R] with DirectCap[[V] =>> StateEff[S, V], R] {
+  override protected def apply[V](eff: StateEff[S, V]): V = eff match
+    case StateOp.Get() => state
+    case StateOp.Put(newState) => state = newState
 }
