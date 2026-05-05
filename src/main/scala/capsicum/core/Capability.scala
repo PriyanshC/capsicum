@@ -13,13 +13,20 @@ trait Effect[V]
 * @tparam P the parameter type for the result of resumption
 * @tparam R the final return type
 */
-sealed trait BaseCapability[-E <: Effect, -P, R]() {
-  def perform[V](eff: E[V], resume: V => P): R
+sealed trait BaseCapability[-E <: Effect, -P, R] {
+  def perform[V](eff: E[V], resume: V => P): R^{this, resume}
   final def run(prog: this.type ?-> R): R = prog(using this)
 }
 
-trait Capability[-E <: Effect, -P, R]() extends BaseCapability[E, P, R] with caps.SharedCapability
-trait UniqueCapability[-E <: Effect, -P, R]() extends BaseCapability[E, P, R] with caps.ExclusiveCapability
+trait Capability[-E <: Effect, -P, R] extends BaseCapability[E, P, R] with caps.SharedCapability
+trait UniqueCapability[-E <: Effect, -P, R] extends BaseCapability[E, P, R] with caps.ExclusiveCapability
+
+
+trait PureCap[-E <: Effect, -P, R] {
+  this: BaseCapability[E, P, R]^ =>
+  override def perform[V](eff: E[V], resume: V => P): R
+}
+
 
 /**
  * Type alias for a capability where the resumption's return and final return types are the same.

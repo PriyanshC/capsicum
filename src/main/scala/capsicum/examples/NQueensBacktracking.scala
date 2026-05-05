@@ -7,7 +7,7 @@ import language.experimental.captureChecking
 object NQueensBacktracking {
   case class Choose[V](choices: Seq[V]) extends Effect[V]
       
-  trait AmbCapability[R] extends Capability[Choose, R, R] {
+  trait AmbCapability[R] extends Capability[Choose, R, R] with PureCap[Choose, R, R] {
     final def choose(choices: Seq[Int])(resume: Int => R): R = perform(Choose(choices), resume)
   }
 

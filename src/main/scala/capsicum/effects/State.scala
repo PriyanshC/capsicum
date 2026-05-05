@@ -10,7 +10,7 @@ object StateOp {
   case class Put[S](value: S) extends StateEff[S, Unit]
 }
 
-trait StateCapability[S, R] extends Capability[[V] =>> StateEff[S, V], R, R] {
+trait StateCapability[S, R] extends Capability[[V] =>> StateEff[S, V], R, R] with PureCap[[V] =>> StateEff[S, V], R, R] {
   final def get(resume: S => R): R = perform(StateOp.Get(), resume)
   final def put(newState: S, resume: Unit => R): R = perform(StateOp.Put(newState), resume)
 }

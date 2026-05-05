@@ -6,7 +6,7 @@ import language.experimental.captureChecking
 
 
 def drunkToss(): Either[String, Boolean] = {
-  trait RandCapability[R] extends MonoCapability[Nullary[Boolean], R] {
+  trait RandCapability[R] extends MonoCapability[Nullary[Boolean], R] with PureCap[Nullary[Boolean], R, R] {
     final def flip(resume: Boolean => R): R = perform(Parameterless(), resume)
   }
   
