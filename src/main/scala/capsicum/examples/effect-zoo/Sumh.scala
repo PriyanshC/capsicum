@@ -12,7 +12,7 @@ object Sumh {
       count.get { s =>
         count.update(_ + 1, { _ =>
           sum.update(_ + s.toLong, {_ =>
-            if s < r then Thunk(() => rec) else count.get(c => Chunk((c, s)))
+            if s < r then suspend(rec) else count.get(c => result((c, s)))
           })
         })
       }
@@ -23,7 +23,7 @@ object Sumh {
   def round1 = {
     val state = new MutableStateHandler[Int, Bounce[(Int, Long)]](0)
     val sum = new MutableStateHandler[Long, Bounce[(Int, Long)]](0L)
-    val (resInt, resLong) = run(state, sum)(program(Sumh.LIMIT)).run
+    val (resInt, resLong) = run(state, sum)(program(Sumh.LIMIT)).eval
     (resInt, resLong, resInt + 1)
   }
 }

@@ -6,13 +6,14 @@ import scala.language.experimental.captureChecking
 import caps._
 
 sealed abstract class Bounce[A] {
-  @tailrec final def run: A = this match {
-    case thunk: Thunk[A, ?] => thunk.cont().run
+  @tailrec final def eval: A = this match {
+    case thunk: Thunk[A] => thunk.cont().eval
     case chunk: Chunk[A] => chunk.x
   }
 }
 
+def suspend[A, C^](x: ->{C} Bounce[A]): Thunk[A]^{C} = Thunk(() => x)
+def result[A](x: A): Chunk[A] = Chunk(x)
+
 final class Chunk[A](val x: A) extends Bounce[A]
-final class Thunk[A, C^](val cont: () ->{C} Bounce[A]^) extends Bounce[A] {
-  def lift: Bounce[A]^{C} = this
-}
+final class Thunk[A](val cont: () => Bounce[A]^) extends Bounce[A]
