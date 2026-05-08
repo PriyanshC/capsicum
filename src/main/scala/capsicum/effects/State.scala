@@ -11,8 +11,8 @@ object StateOp {
 }
 
 trait StateCapability[S, R] extends Capability[[V] =>> StateEff[S, V], R, R] {
-  final def get(resume: S => R): R = perform(StateOp.Get(), resume)
-  final def put(newState: S, resume: Unit => R): R = perform(StateOp.Put(newState), resume)
+  final inline def get(inline resume: S => R): R = perform(StateOp.Get(), resume)
+  final inline def put(inline newState: S, inline resume: Unit => R): R = perform(StateOp.Put(newState), resume)
   inline def update(upd: S => S, resume: Unit => R): R = get(s => put(upd(s), resume))
 }
 
