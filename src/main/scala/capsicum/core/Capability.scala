@@ -15,7 +15,7 @@ trait Effect[V]
 */
 sealed trait BaseCapability[-E <: Effect, -P, R]() {
   def perform[V](eff: E[V], resume: V => P): R
-  final def run(prog: this.type ?-> R): R = prog(using this)
+  final def run[C^](prog: this.type ?->{C} R): R^{C} = prog(using this)
 }
 
 trait Capability[-E <: Effect, -P, R]() extends BaseCapability[E, P, R] with caps.SharedCapability
