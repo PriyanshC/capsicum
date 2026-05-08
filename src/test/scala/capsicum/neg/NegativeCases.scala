@@ -13,16 +13,6 @@ trait ProducerCapability[A, R] extends Capability[[V] =>> ProduceOp[A, V], R, R]
   final def produce(resume: A -> R): R = perform(ProduceOp.GetValue(), resume)
 }
 
-// Always provides no-op and prints!
-class GoodHandler[R] extends ProducerCapability[Unit -> Unit, R] {
-  override def perform[V](op: ProduceOp[Unit -> Unit, V], resume: V => R): R = op match
-  case ProduceOp.GetValue() => {
-    println("Good handler invoked!")
-    val noop: Unit -> Unit = _ => ()
-    resume(noop)
-  }
-}
-
 lazy object ContinuationLeakDemo {
   class UnsafeHandler[R] extends ProducerCapability[Unit -> Unit, R] {
     override def perform[V](op: ProduceOp[Unit -> Unit, V], resume: V => R): R = op match
@@ -92,5 +82,36 @@ lazy object EscapedHandler {
     because handler in an enclosing function is not visible from any in method naughtyProgram.
     */
     // handler
+  }
+}
+
+
+lazy object PoisonState {
+  import capsicum.effects._
+
+  class FileSystem
+
+  class Logger(fs: FileSystem^) {
+    def log(s: String): Unit = println(s"Pretending to log ${s}")
+  }
+
+  val fs: FileSystem^ = new FileSystem
+  val logger: Logger^{fs} = new Logger(fs)
+  val handler: StateCapability[Logger^{fs}, Unit] = new MutableStateHandler(logger)
+
+  def naughtyProgram[C^](using state: StateCapability[Logger^{C}, Unit]): Unit = {
+    state.get{ (logger: Logger^{C}) =>
+      logger.log("Hi from polymorphic state")
+      
+      val newFs: FileSystem^ = new FileSystem
+      val newLogger: Logger^{newFs} = new Logger(newFs)
+
+      /* ERROR:
+      Found:    Logger^{newLogger}
+      Required: Logger^{C}
+      Note that capability `newLogger` cannot flow into capture set {C}.
+      */
+      // state.put(newLogger,  _ => println("Logger updated!"))
+    }
   }
 }
