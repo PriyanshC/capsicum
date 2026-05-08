@@ -4,13 +4,6 @@ import capsicum.core._
 import capsicum.effects._
 import language.experimental.captureChecking
 
-def demo = {
-  val c: caps.SharedCapability = new caps.SharedCapability {}
-
-  val foo: Unit ->{c} Unit = _ => println(c)
-  val bar: Unit -> Unit = foo.asInstanceOf[Unit -> Unit]
-}
-
 
 object Cdown {
   def LIMIT = 10000

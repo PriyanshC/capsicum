@@ -11,9 +11,9 @@ object StateOp {
 }
 
 trait StateCapability[S, R] extends Capability[[V] =>> StateEff[S, V], R, R] {
-  final def get(resume: S => R): R^{this} = perform(StateOp.Get(), resume)
-  final def put(newState: S, resume: Unit => R): R = perform(StateOp.Put(newState), resume)
-  def update(upd: S => S, resume: Unit => R): R^{this} = get(s => put(upd(s), resume))
+  final inline def get(resume: S => R): R^{this} = perform(StateOp.Get(), resume)
+  final inline def put(newState: S, resume: Unit => R): R = perform(StateOp.Put(newState), resume)
+  inline def update(upd: S => S, resume: Unit => R): R^{this} = get(s => put(upd(s), resume))
 }
 
 class MutableStateHandler[S, R](private var state: S) extends StateCapability[S, R] with DirectCap[[V] =>> StateEff[S, V], R] {
