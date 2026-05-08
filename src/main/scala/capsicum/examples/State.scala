@@ -20,3 +20,42 @@ def basicState(): Int = {
   
   handler.run(prog)
 }
+
+def trackedState(): Unit = {
+  class FileSystem
+
+  class Logger(fs: FileSystem^) {
+    def log(s: String): Unit = println(s"Pretending to ${s}")
+  }
+
+  val fs: FileSystem^ = new FileSystem
+  val logger: Logger^{fs} = new Logger(fs)
+  val handler: StateCapability[Logger^{fs}, Unit] = new MutableStateHandler(logger)
+
+  def progWithScopedCapture(using state: StateCapability[Logger^{fs}, Unit]): Unit = {
+    state.get{ (logger: Logger^{fs}) =>
+      logger.log("Hi from scoped captured state")
+      
+      val newLogger: Logger^{fs} = new Logger(fs)
+      state.put(newLogger, { _ =>
+        println("Logger updated!")
+      })
+    }
+  }
+
+  def progWithPolymorphicCapture[C^](using state: StateCapability[Logger^{C}, Unit]): Unit = {
+    state.get{ (logger: Logger^{C}) =>
+      logger.log("Hi from polymorphic state")
+      
+      // Using a new tracked FS wouldn't be ok, we don't know what C^ includes
+      val untrackedFs: FileSystem = new FileSystem
+      val newLogger: Logger^{} = new Logger(untrackedFs)
+      state.put(newLogger, { _ =>
+        println("Logger updated!")
+      })
+    }
+  }
+
+  handler.run(progWithScopedCapture)
+  handler.run(progWithPolymorphicCapture)
+}
