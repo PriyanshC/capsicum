@@ -3,8 +3,6 @@ package capsicum.core
 import scala.annotation.tailrec
 import scala.language.experimental.captureChecking
 
-import caps._
-
 sealed abstract class Bounce[A] {
   @tailrec final def eval: A = this match {
     case thunk: Thunk[A] => thunk.cont().eval
