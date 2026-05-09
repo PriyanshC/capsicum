@@ -13,7 +13,7 @@ object StateOp {
 trait StateCapability[S, R] extends Capability[[V] =>> StateEff[S, V], R, R] {
   final inline def get(inline resume: S => R): R = perform(StateOp.Get(), resume)
   final inline def put(inline newState: S, inline resume: Unit => R): R = perform(StateOp.Put(newState), resume)
-  inline def update(upd: S => S, resume: Unit => R): R = get(s => put(upd(s), resume))
+  inline def update(inline upd: S => S, inline resume: Unit => R): R = get(s => put(upd(s), resume))
 }
 
 class MutableStateHandler[S, R](private var state: S) extends StateCapability[S, R] with DirectCap[[V] =>> StateEff[S, V], R] {
