@@ -11,8 +11,8 @@ object ConsoleOp {
 }
 
 trait ConsoleCapability[R] extends Capability[ConsoleEff, R, R] {
-  final def print(s: String, resume: Unit => R): R = perform(ConsoleOp.Print(s), resume)
-  final def readLine(resume: String => R): R = perform(ConsoleOp.ReadLine(), resume)
+  final inline def print(inline s: String, inline resume: Unit => R): R = perform(ConsoleOp.Print(s), resume)
+  final inline def readLine(inline resume: String => R): R = perform(ConsoleOp.ReadLine(), resume)
 }
 
 class StdConsoleHandler[R] extends ConsoleCapability[R] {
