@@ -54,6 +54,32 @@ object Stream {
   }
 }
 
+trait ChainedStream[A] {
+  def build[R](finish: Unit => R)(using StreamCap[A, R]): R
+
+  def map[B](f: A -> B): ChainedStream[B]^{this} = new ChainedStream[B] {
+    def build[R](finish: Unit => R)(using out: StreamCap[B, R]): R =
+      Stream.map(f)(this.build(finish))(using out)
+  }
+
+  def filter(p: A -> Boolean): ChainedStream[A]^{this} = new ChainedStream[A] {
+    def build[R](finish: Unit => R)(using out: StreamCap[A, R]): R =
+      Stream.filter(p)(this.build(finish))(using out)
+  }
+
+  def fold[S](base: S)(f: (S, A) -> S): S =
+    Stream.fold(base)(f) { folder ?=>
+      this.build(_ => folder.acc)(using folder)
+    }
+}
+
+object ChainedStream {
+  def fromSeq[T](seq: Seq[T]): ChainedStream[T] = new ChainedStream[T] {
+    def build[R](finish: Unit => R)(using cap: StreamCap[T, R]): R =
+      Stream.fromSeq(seq, finish)(using cap)
+  }
+}
+
 object Demo {
   def round1(theSeq: Seq[Int]): Int = {
     val folder = new FoldHandler[Int, Int](0)(_ + _)
@@ -79,5 +105,12 @@ object Demo {
         }
       }
     }
+  }
+
+  def round1Chain(theSeq: Seq[Int]): Int = {
+    ChainedStream.fromSeq(theSeq)
+      .filter(_ % 2 == 0)
+      .map(_ + 1)
+      .fold(0)(_ + _)
   }
 }
