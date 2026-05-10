@@ -22,13 +22,12 @@ object Fiber {
 }
 
 trait AsyncCapability[R] extends Capability[AsyncEff, R, R] {
-  final def fork[T](task: () -> T, resume: Fiber[T] => R): R = perform(AsyncOp.Fork(task), resume)
-  final def join[T](fiber: Fiber[T], resume: T => R): R = perform(AsyncOp.Join(fiber), resume)
+  final inline def fork[T](inline task: () -> T, inline resume: Fiber[T] => R): R = perform(AsyncOp.Fork(task), resume)
+  final inline def join[T](inline fiber: Fiber[T], inline resume: T => R): R = perform(AsyncOp.Join(fiber), resume)
 }
 
 
 class LoomAsyncHandler[R] extends AsyncCapability[R] {
-
   override def perform[V](eff: AsyncEff[V], resume: V => R): R = eff match
     case f: AsyncOp.Fork[t] => {
       val promise = new java.util.concurrent.CompletableFuture[t]()

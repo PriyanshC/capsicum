@@ -13,13 +13,13 @@ trait Effect[V]
 * @tparam P the parameter type for the result of resumption
 * @tparam R the final return type
 */
-sealed trait BaseCapability[-E <: Effect, -P, R]() {
+sealed trait BaseCapability[-E <: Effect, -P, R] {
   def perform[V](eff: E[V], resume: V => P): R
-  final def run(prog: this.type ?=> R): R = prog(using this)
+  final inline def run(inline prog: this.type ?=> R): R = prog(using this)
 }
 
-trait Capability[-E <: Effect, -P, R]() extends BaseCapability[E, P, R] with caps.SharedCapability
-trait UniqueCapability[-E <: Effect, -P, R]() extends BaseCapability[E, P, R] with caps.ExclusiveCapability
+trait Capability[-E <: Effect, -P, R] extends BaseCapability[E, P, R] with caps.SharedCapability
+trait UniqueCapability[-E <: Effect, -P, R] extends BaseCapability[E, P, R] with caps.ExclusiveCapability
 
 /**
  * Type alias for a capability where the resumption's return and final return types are the same.
@@ -31,7 +31,7 @@ type MonoCapability[-E <: Effect, R] = Capability[E, R, R]
 trait DirectCap[-E <: Effect, R] {
   this: MonoCapability[E, R] =>
     protected def apply[V](eff: E[V]): V
-    final override def perform[V](eff: E[V], resume: V => R): R = resume(apply(eff))
+    final override inline def perform[V](inline eff: E[V], inline resume: V => R): R = resume(apply(eff))
 }
 
 private sealed trait NullaryEff[-V, V0] extends Effect[V0]
@@ -41,18 +41,16 @@ type Nullary[-V] = [X] =>> NullaryEff[V, X]
 
 trait NullaryCap[+V, -P, +R] {
   this: BaseCapability[Nullary[V], P, R] =>
-
   def perform(resume: V => P): R
-
-  final override def perform[V0](eff: NullaryEff[V, V0], resume: V0 => P): R = eff match {
+  final override inline def perform[V0](inline eff: NullaryEff[V, V0], inline resume: V0 => P): R = eff match {
     case Parameterless() => perform(resume)
   }
 }
 
 trait DirectNullaryCap[+V, R] {
-  this: MonoCapability[[X] =>> NullaryEff[V, X], R] =>
+  this: MonoCapability[Nullary[V], R] =>
   protected def apply(): V
-  final override def perform[V0](eff: NullaryEff[V, V0], resume: V0 => R): R = eff match
+  final override inline def perform[V0](inline eff: NullaryEff[V, V0], inline resume: V0 => R): R = eff match
     case Parameterless() => resume(apply())
 }
 
