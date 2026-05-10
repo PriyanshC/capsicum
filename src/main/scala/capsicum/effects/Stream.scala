@@ -29,44 +29,53 @@ class FoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCa
       current = f(current, v)
       resume(())
     }
+  
+  def acc: S = current
 }
 
 object Stream {
-  def map[A, B, R](f: A -> B)(prog: MapHandler[A, B, R] ?-> R)(using out: StreamCap[B, R]): R = {
+  def map[A, B, R](f: A -> B)(prog: MapHandler[A, B, R] ?=> R)(using out: StreamCap[B, R]): R = {
     val mapper = new MapHandler[A, B, R](f)(out)
     mapper.run(prog)
   }
 
-  def filter[A, R](p: A -> Boolean)(prog: FilterHandler[A, R] ?-> R)(using out: StreamCap[A, R]): R = {
+  def filter[A, R](p: A -> Boolean)(prog: FilterHandler[A, R] ?=> R)(using out: StreamCap[A, R]): R = {
     val filterer = new FilterHandler[A, R](p)(out)
     filterer.run(prog)
   }
 
-  def fold[T, S](base: S)(f: (S, T) -> S)(prog: FoldHandler[T, S] ?-> S): S = {
+  def fold[T, S](base: S)(f: (S, T) -> S)(prog: FoldHandler[T, S] ?=> S): S = {
     val folder = new FoldHandler[T, S](base)(f)
     folder.run(prog)
   }
-  
 
   def fromSeq[T, R](seq: Seq[T], resume: Unit => R)(using s: StreamCap[T, R]): R = {
     if (seq.isEmpty) resume(()) else s.emit(seq.head, _ => fromSeq(seq.tail, resume))
   }
 }
 
-object CapsicumStream {
-
-
+object Demo {
   def round1(theSeq: Seq[Int]): Int = {
-    val folder = new FoldHandler[Int, Int](0, _ + _)
+    val folder = new FoldHandler[Int, Int](0)(_ + _)
 
     folder.run {
-      val mapper = new MapHandler[Int, Int, Int](_ + 1)
+      val mapper = new MapHandler[Int, Int, Int](_ + 1)(folder)
       
       mapper.run {
-        val filterer = new FilterHandler[Int, Int](_ % 2 == 0)
+        val filterer = new FilterHandler[Int, Int](_ % 2 == 0)(mapper)
         
         filterer.run {
-          Stream.fromSeq(theSeq, ???)
+          Stream.fromSeq(theSeq, _ => folder.acc)
+        }
+      }
+    }
+  }
+
+  def round21(theSeq: Seq[Int]): Int = {
+    Stream.fold[Int, Int](0)(_ + _) { folder ?=>
+      Stream.map[Int, Int, Int](_ + 1) { 
+        Stream.filter[Int, Int](_ % 2 == 0) {
+          Stream.fromSeq(theSeq, _ => folder.acc)
         }
       }
     }
