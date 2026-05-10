@@ -52,7 +52,7 @@ object Mulst {
 
     val s1 = new MutableStateHandler[Int, Ret](0)
     val s2 = new MutableStateHandler[Int, Ret](0)
-    s1.run(s2.run(prog(Mulst.LIMIT))).eval
+    prog(Mulst.LIMIT)(using s1, s2).eval
   }
 
   def round3 = {
@@ -77,7 +77,7 @@ object Mulst {
     val s1 = new MutableStateHandler[Int, Ret](0)
     val s2 = new MutableStateHandler[Int, Ret](0)
     val s3 = new MutableStateHandler[Int, Ret](0)
-    s1.run(s2.run(s3.run(prog(Mulst.LIMIT)))).eval
+    prog(Mulst.LIMIT)(using s1, s2, s3).eval
   }
 
   def round4 = {
@@ -103,7 +103,7 @@ object Mulst {
     val s2 = new MutableStateHandler[Int, Ret](0)
     val s3 = new MutableStateHandler[Int, Ret](0)
     val s4 = new MutableStateHandler[Int, Ret](0)
-    s1.run(s2.run(s3.run(s4.run(prog(Mulst.LIMIT))))).eval
+    prog(Mulst.LIMIT)(using s1, s2, s3, s4).eval
   }
 
   def round5 = {
@@ -130,6 +130,6 @@ object Mulst {
     val s3 = new MutableStateHandler[Int, Ret](0)
     val s4 = new MutableStateHandler[Int, Ret](0)
     val s5 = new MutableStateHandler[Int, Ret](0)
-    s1.run(s2.run(s3.run(s4.run(s5.run(prog(Mulst.LIMIT)))))).eval
+    prog(Mulst.LIMIT)(using s1, s2, s3, s4, s5).eval
   }
 }
