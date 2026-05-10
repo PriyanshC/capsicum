@@ -10,8 +10,8 @@ sealed abstract class Bounce[A] {
   }
 }
 
-def suspend[A, C^](x: ->{C} Bounce[A]): Thunk[A]^{C} = Thunk(() => x)
-def result[A](x: A): Chunk[A] = Chunk(x)
+inline def suspend[A](x: => Bounce[A]): Thunk[A] = Thunk(() => x)
+inline def result[A](x: A): Chunk[A] = Chunk(x)
 
 final class Chunk[A](val x: A) extends Bounce[A]
 final class Thunk[A](val cont: () => Bounce[A]^) extends Bounce[A]

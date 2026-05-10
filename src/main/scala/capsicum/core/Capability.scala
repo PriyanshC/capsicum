@@ -31,7 +31,7 @@ type MonoCapability[-E <: Effect, R] = Capability[E, R, R]
 trait DirectCap[-E <: Effect, R] {
   this: MonoCapability[E, R] =>
     protected def apply[V](eff: E[V]): V
-    final override inline def perform[V](inline eff: E[V], inline resume: V => R): R = resume(apply(eff))
+    final override def perform[V](eff: E[V], resume: V => R): R = resume(apply(eff))
 }
 
 private sealed trait NullaryEff[-V, V0] extends Effect[V0]
@@ -42,7 +42,7 @@ type Nullary[-V] = [X] =>> NullaryEff[V, X]
 trait NullaryCap[+V, -P, +R] {
   this: BaseCapability[Nullary[V], P, R] =>
   def perform(resume: V => P): R
-  final override inline def perform[V0](inline eff: NullaryEff[V, V0], inline resume: V0 => P): R = eff match {
+  final override inline def perform[V0](inline eff: NullaryEff[V, V0], inline resume: V0 => P): R = inline eff match {
     case Parameterless() => perform(resume)
   }
 }
@@ -50,7 +50,7 @@ trait NullaryCap[+V, -P, +R] {
 trait DirectNullaryCap[+V, R] {
   this: MonoCapability[Nullary[V], R] =>
   protected def apply(): V
-  final override inline def perform[V0](inline eff: NullaryEff[V, V0], inline resume: V0 => R): R = eff match
+  final override inline def perform[V0](inline eff: NullaryEff[V, V0], inline resume: V0 => R): R = inline eff match
     case Parameterless() => resume(apply())
 }
 
