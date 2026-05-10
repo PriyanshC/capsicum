@@ -34,17 +34,17 @@ class FoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCa
 }
 
 object Stream {
-  def map[A, B, R](f: A -> B)(prog: MapHandler[A, B, R] ?=> R)(using out: StreamCap[B, R]): R = {
+  inline def map[A, B, R](inline f: A -> B)(prog: MapHandler[A, B, R] ?=> R)(using inline out: StreamCap[B, R]): R = {
     val mapper = new MapHandler[A, B, R](f)(out)
     mapper.run(prog)
   }
 
-  def filter[A, R](p: A -> Boolean)(prog: FilterHandler[A, R] ?=> R)(using out: StreamCap[A, R]): R = {
+  inline def filter[A, R](inline p: A -> Boolean)(prog: FilterHandler[A, R] ?=> R)(using inline out: StreamCap[A, R]): R = {
     val filterer = new FilterHandler[A, R](p)(out)
     filterer.run(prog)
   }
 
-  def fold[T, S](base: S)(f: (S, T) -> S)(prog: FoldHandler[T, S] ?=> S): S = {
+  inline def fold[T, S](inline base: S)(inline f: (S, T) -> S)(prog: FoldHandler[T, S] ?=> S): S = {
     val folder = new FoldHandler[T, S](base)(f)
     folder.run(prog)
   }
