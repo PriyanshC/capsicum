@@ -33,6 +33,19 @@ class FoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCa
   def acc: S = current
 }
 
+// Needs resume-capturing perform()
+class SafeFoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCap[T, Bounce[S]] {
+  override def perform[V](eff: StreamEff[T, V], resume: V => Bounce[S]): Bounce[S] = eff match {
+    case Yield(v) => 
+      current = f(current, v)
+      // suspend(resume(()))
+      // Thunk(() => resume(()))
+      ???
+  }
+  
+  def acc: S = current
+}
+
 object Stream {
   inline def map[A, B, R](inline f: A -> B)(prog: MapHandler[A, B, R] ?=> R)(using inline out: StreamCap[B, R]): R = {
     val mapper = new MapHandler[A, B, R](f)(out)
@@ -51,6 +64,15 @@ object Stream {
 
   def fromSeq[T, R](seq: Seq[T], resume: Unit => R)(using s: StreamCap[T, R]): R = {
     if (seq.isEmpty) resume(()) else s.emit(seq.head, _ => fromSeq(seq.tail, resume))
+  }
+
+  // TODO this is the weird pattern again
+  inline def fromSeqSafe[T, R, C^, D^](seqq: Seq[T], resume: Unit ->{C} Bounce[R])(using s: StreamCap[T, Bounce[R]^{C}]): Bounce[R]^{s, C, D} = {
+    def loop(seq: Seq[T]) = {
+    if (seq.isEmpty) suspend(resume(()))
+    else s.emit(seq.head, _ => suspend(fromSeqSafe(seq.tail, resume)))
+    }
+    loop(seqq)
   }
 }
 
@@ -79,6 +101,40 @@ object ChainedStream {
       Stream.fromSeq(seq, finish)(using cap)
   }
 }
+
+trait SafeChainedStream[A] {
+  def build[R](finish: Unit => Bounce[R])(using StreamCap[A, Bounce[R]]): Bounce[R]
+
+  def map[B](f: A -> B): SafeChainedStream[B] = new SafeChainedStream[B] {
+    def build[R](finish: Unit => Bounce[R])(using out: StreamCap[B, Bounce[R]]): Bounce[R] =
+      Stream.map(f)(this.build(finish))(using out)
+  }
+
+  def filter(p: A -> Boolean): SafeChainedStream[A] ^{this}= new SafeChainedStream[A] {
+    def build[R](finish: Unit => Bounce[R])(using out: StreamCap[A, Bounce[R]]): Bounce[R] =
+      Stream.filter(p)(this.build(finish))(using out)
+  }
+
+  def fold[S](base: S)(f: (S, A) -> S): S = {
+    val folder = new SafeFoldHandler[A, S](base)(f)
+    val bounce = folder.run {
+      this.build(_ => result(folder.acc))(using folder)
+    }
+    bounce.eval
+  }
+}
+
+// object SafeChainedStream {
+//   def fromSeq[T, C^](seq: Seq[T]): SafeChainedStream[T] = new SafeChainedStream[T] {
+//     inline def build[R](finish: Unit => Bounce[R])(using cap: StreamCap[T, Bounce[R]]): Bounce[R] = {
+//       def loop(s: Seq[T]): Bounce[R]^{finish, cap} = suspend {
+//         if (s.isEmpty) finish(())
+//         else cap.emit(s.head, _ => loop(s.tail))
+//       }
+//       loop(seq)
+//     }
+//   }
+// }
 
 object Demo {
   def round1(theSeq: Seq[Int]): Int = {
@@ -113,4 +169,15 @@ object Demo {
       .map(_ + 1)
       .fold(0)(_ + _)
   }
+
+  object Fmf {
+    def theSeq: Seq[Int] = IArray.from(0 until 10000)
+  }
+
+  // def round1 = {
+  //   val lol = SafeChainedStream.fromSeq(Fmf.theSeq)
+  //     .filter(x => x % 2 == 0)
+  //     .map(x => x + 1)
+  //     .fold(0)((t, s) => t + s)
+  // }
 }
