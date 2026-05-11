@@ -14,7 +14,7 @@ trait Effect[V]
 * @tparam R the final return type
 */
 sealed trait BaseCapability[-E <: Effect, -P, R] {
-  def perform[V](eff: E[V], resume: V => P): R
+  def perform[V](eff: E[V], resume: V => P): R^{resume}
   final inline def run(inline prog: this.type ?=> R): R = prog(using this)
 }
 

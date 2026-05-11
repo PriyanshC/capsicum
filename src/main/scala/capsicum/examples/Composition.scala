@@ -7,7 +7,7 @@ import language.experimental.captureChecking
 
 def drunkToss(): Either[String, Boolean] = {
   trait RandCapability[R] extends MonoCapability[Nullary[Boolean], R] {
-    final def flip(resume: Boolean => R): R = perform(Parameterless(), resume)
+    final def flip(resume: Boolean => R): R^{resume} = perform(Parameterless(), resume)
   }
   
   type R = Either[String, Boolean]
@@ -18,7 +18,7 @@ def drunkToss(): Either[String, Boolean] = {
   
   val excHandler = new EitherExcHandler[String, Boolean]()
   
-  def prog(using rand: RandCapability[R], exc: RaiseCapability[String, Boolean, R]): R = {
+  def prog(using rand: RandCapability[R], exc: RaiseCapability[String, Boolean, R]): R^{rand} = {
     rand.flip { caught =>
       if (caught) {
         rand.flip { heads => Right(heads) }

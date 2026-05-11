@@ -31,3 +31,9 @@ class ImmutableStateHandler[S, R](private val state: S) extends StateCapability[
       h.run(resume(()))
     }
 }
+
+class PureStateHandler[S, R] extends StateCapability[S, S -> R] {  
+  override def perform[V](eff: StateEff[S, V], resume: V => (S -> R)): S ->{resume} R = eff match
+    case StateOp.Get() => (currentState: S) => resume(currentState)(currentState)
+    case StateOp.Put(newState) => (_: S) => resume(())(newState)
+}
