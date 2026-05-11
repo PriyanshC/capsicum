@@ -60,16 +60,16 @@ object Stream {
     folder.run(prog)
   }
 
+  // TODO this is the weird pattern again
   inline def fromSeq[T, R](seqq: Seq[T], resume: Unit => R)(using s: StreamCap[T, R]): R = {
     def loop(seq: Seq[T]): R = if (seq.isEmpty) resume(()) else s.emit(seq.head, _ => loop(seq.tail))
     loop(seqq)
   }
 
-  // TODO this is the weird pattern again
-  inline def fromSeqSafe[T, R, C^, D^](seqq: Seq[T], resume: Unit ->{C} Bounce[R])(using s: StreamCap[T, Bounce[R]^{C}]): Bounce[R]^{s, C, D} = {
-    def loop(seq: Seq[T]) = {
-    if (seq.isEmpty) suspend(resume(()))
-    else s.emit(seq.head, _ => suspend(fromSeqSafe(seq.tail, resume)))
+  def fromSeqSafe[T, R](seqq: Seq[T], resume: Unit => Bounce[R])(using s: StreamCap[T, Bounce[R]]): Bounce[R]^{resume, s} = {
+    def loop(seq: Seq[T]): Bounce[R]^{resume, s} = {
+      if (seq.isEmpty) suspend(resume(()))
+      else s.emit(seq.head, _ => suspend(loop(seq.tail)).asInstanceOf[Bounce[R]]) // TODO cast bad
     }
     loop(seqq)
   }
@@ -108,12 +108,12 @@ object ChainedStream {
 }
 
 trait SafeChainedStream[A] {
-  def build[R](finish: Unit => Bounce[R])(using StreamCap[A, Bounce[R]]): Bounce[R]
+  def build[R](finish: Unit => Bounce[R])(using out: StreamCap[A, Bounce[R]]): Bounce[R]^{finish, out}
 
   def map[B](f: A -> B): SafeChainedStream[B]^{this} = {
     val prev = this
     new SafeChainedStream[B] {
-      def build[R](finish: Unit => Bounce[R])(using out: StreamCap[B, Bounce[R]]): Bounce[R] =
+      def build[R](finish: Unit => Bounce[R])(using out: StreamCap[B, Bounce[R]]): Bounce[R]^{finish, out} =
         Stream.map(f)(prev.build(finish))(using out)
     }
   }
@@ -121,7 +121,7 @@ trait SafeChainedStream[A] {
   def filter(p: A -> Boolean): SafeChainedStream[A] ^{this} = {
     val prev = this
     new SafeChainedStream[A] {
-      def build[R](finish: Unit => Bounce[R])(using out: StreamCap[A, Bounce[R]]): Bounce[R] =
+      def build[R](finish: Unit => Bounce[R])(using out: StreamCap[A, Bounce[R]]): Bounce[R]^{finish, out} =
         Stream.filter(p)(prev.build(finish))(using out)
     }
   }
@@ -135,21 +135,26 @@ trait SafeChainedStream[A] {
   }
 }
 
-// object SafeChainedStream {
-//   def fromSeq[T, C^](seq: Seq[T]): SafeChainedStream[T] = new SafeChainedStream[T] {
-//     def build[R](finish: Unit => Bounce[R])(using cap: StreamCap[T, Bounce[R]]): Bounce[R]^{finish, cap} = {
-//       def loop(s: Seq[T]): Bounce[R]^{finish, cap} = suspend {
-//         if (s.isEmpty) finish(())
-//         else cap.emit(s.head, _ => loop(s.tail))
-//       }
-//       loop(seq)
-//     }
-//   }
-// }
+/***
+ * {
+      def loop(currentSeq: Seq[T]): Bounce[R]^{finish, cap} = {
+        if (currentSeq.isEmpty) suspend(finish(()))
+        else cap.emit(currentSeq.head, _ => suspend(loop(currentSeq.tail)))
+      }
+      loop(seq)
+    }
+ */
+object SafeChainedStream {
+  def fromSeq[T](seq: Seq[T]): SafeChainedStream[T] = new SafeChainedStream[T] {
+    def build[R](finish: Unit => Bounce[R])(using cap: StreamCap[T, Bounce[R]]): Bounce[R]^{finish, cap} = {
+      Stream.fromSeqSafe(seq, finish)(using cap)
+    }
+  }
+}
 
 object Demo {
   object Fmf {
-    def theSeq: Seq[Int] = IArray.from(0 until 500)
+    def theSeq: Seq[Int] = IArray.from(0 until 10000)
   }
 
   def round1(theSeq: Seq[Int]): Int = {
@@ -186,10 +191,10 @@ object Demo {
   }
 
 
-  // def round1ChainSafe = {
-  //   SafeChainedStream.fromSeq(Fmf.theSeq)
-  //     .filter(x => x % 2 == 0)
-  //     .map(x => x + 1)
-  //     .fold(0)((t, s) => t + s)
-  // }
+  def round1ChainSafe(theSeq: Seq[Int]): Int = {
+    SafeChainedStream.fromSeq(theSeq)
+      .filter(x => x % 2 == 0)
+      .map(x => x + 1)
+      .fold(0)((t, s) => t + s)
+  }
 }

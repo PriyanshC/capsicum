@@ -10,5 +10,5 @@ object Main extends App {
   // NQueensBacktracking.prettyPrint(NQueensBacktracking.solve(8).take(3))
   // basicAsyncProgram()
   // println(Mulst.round5)
-  println(Demo.round1Chain(Demo.Fmf.theSeq))
+  println(Demo.round1ChainSafe(Demo.Fmf.theSeq))
 }
