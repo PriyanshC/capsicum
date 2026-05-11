@@ -143,7 +143,7 @@ trait SafeChainedStream[A] {
 
 object Demo {
   object Fmf {
-    def theSeq: Seq[Int] = IArray.from(0 until 10000)
+    def theSeq: Seq[Int] = IArray.from(0 until 500)
   }
 
   def round1(theSeq: Seq[Int]): Int = {
