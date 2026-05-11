@@ -4,21 +4,38 @@ import capsicum.core._
 import capsicum.effects._
 import language.experimental.captureChecking
 
-def basicState(): Int = {
-  val handler = new MutableStateHandler[Int, Int](10)
+def basicMutableState(): Int = {
+  val mutableHandler = new MutableStateHandler[Int, Int](10)
   
-  def prog(using StateCapability[Int, Int]): Int = {
-    val handler = summon[StateCapability[Int, Int]]
-    handler.get { s1 =>
-      handler.put(s1 + 5, { _ =>
-        handler.get { s2 =>
+  def prog(using state: StateCapability[Int, Int]): Int = {
+    state.get { s1 =>
+      state.put(s1 + 5, { _ =>
+        state.get { s2 =>
           s2
         }
       })
     }
   }
   
-  handler.run(prog)
+  mutableHandler.run(prog)
+}
+
+def basicPureState(): Int = {
+  val pureHandler = new PureStateCapability[Int, Int]
+  
+  def prog(using state: PureStateCapability[Int, Int]): Int ->{state} (Int, Int) = {
+    state.get { s1 =>
+      state.put(s1 + 5, { _ =>
+        state.get { s2 =>
+          (currentState: Int) => (currentState, s2)
+        }
+      })
+    }
+  }
+
+  val stateFn: Int -> (Int, Int) = pureHandler.run(prog)
+  val (finalState, result) = stateFn(10)
+  result
 }
 
 def trackedState(): Unit = {

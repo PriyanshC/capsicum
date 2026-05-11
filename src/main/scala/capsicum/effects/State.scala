@@ -22,12 +22,9 @@ class MutableStateHandler[S, R](private var state: S) extends StateCapability[S,
     case StateOp.Put(newState) => state = newState
 }
 
-class ImmutableStateHandler[S, R](private val state: S) extends StateCapability[S, R] {
-  override inline def perform[V](eff: StateEff[S, V], resume: V => R): R = eff match
-    case StateOp.Get() => resume(state)
-      
-    case StateOp.Put(newState) => {
-      val h = new ImmutableStateHandler[S, R](newState)
-      h.run(resume(()))
-    }
+class PureStateCapability[S, A] extends StateCapability[S, S -> (S, A)] {
+  override def perform[V](eff: StateEff[S, V], resume: V => (S ->{this} (S, A))): S ->{resume} (S, A) = eff match {
+    case StateOp.Get() => (currentState: S) => resume(currentState)(currentState)
+    case StateOp.Put(newState) => (_: S) => resume(())(newState)
+  }
 }

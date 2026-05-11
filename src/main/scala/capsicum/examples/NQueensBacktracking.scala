@@ -8,7 +8,7 @@ object NQueensBacktracking {
   case class Choose[V](choices: Seq[V]) extends Effect[V]
       
   trait AmbCapability[R] extends Capability[Choose, R, R] {
-    final def choose(choices: Seq[Int])(resume: Int => R): R = perform(Choose(choices), resume)
+    final def choose(choices: Seq[Int])(resume: Int => R): R^{resume} = perform(Choose(choices), resume)
   }
 
   type Placed = List[Int]

@@ -6,7 +6,7 @@ import language.experimental.captureChecking
 case class RaiseEff[Err, V](e: Err) extends Effect[V]
 
 trait RaiseCapability[Err, P, R] extends Capability[[V] =>> RaiseEff[Err, V], P, R] {
-  final def raise(err: Err, resume: Err => P): R = perform(RaiseEff(err), resume)
+  final def raise(err: Err, resume: Err => P): R^{resume} = perform(RaiseEff(err), resume)
 }
 
 class EitherExcHandler[Err, R] extends RaiseCapability[Err, R, Either[Err, R]] {
