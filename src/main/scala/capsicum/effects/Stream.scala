@@ -110,14 +110,20 @@ object ChainedStream {
 trait SafeChainedStream[A] {
   def build[R](finish: Unit => Bounce[R])(using StreamCap[A, Bounce[R]]): Bounce[R]
 
-  def map[B](f: A -> B): SafeChainedStream[B] = new SafeChainedStream[B] {
-    def build[R](finish: Unit => Bounce[R])(using out: StreamCap[B, Bounce[R]]): Bounce[R] =
-      Stream.map(f)(this.build(finish))(using out)
+  def map[B](f: A -> B): SafeChainedStream[B]^{this} = {
+    val prev = this
+    new SafeChainedStream[B] {
+      def build[R](finish: Unit => Bounce[R])(using out: StreamCap[B, Bounce[R]]): Bounce[R] =
+        Stream.map(f)(prev.build(finish))(using out)
+    }
   }
 
-  def filter(p: A -> Boolean): SafeChainedStream[A] ^{this}= new SafeChainedStream[A] {
-    def build[R](finish: Unit => Bounce[R])(using out: StreamCap[A, Bounce[R]]): Bounce[R] =
-      Stream.filter(p)(this.build(finish))(using out)
+  def filter(p: A -> Boolean): SafeChainedStream[A] ^{this} = {
+    val prev = this
+    new SafeChainedStream[A] {
+      def build[R](finish: Unit => Bounce[R])(using out: StreamCap[A, Bounce[R]]): Bounce[R] =
+        Stream.filter(p)(prev.build(finish))(using out)
+    }
   }
 
   def fold[S](base: S)(f: (S, A) -> S): S = {
