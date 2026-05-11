@@ -8,23 +8,23 @@ sealed trait StreamEff[+T, V] extends Effect[V]
 case class Yield[T](value: T) extends StreamEff[T, Unit]
 
 trait StreamCap[T, R] extends MonoCapability[[V] =>> StreamEff[T, V], R] {
-  final inline def emit(inline value: T, inline resume: Unit => R): R = perform(Yield(value), resume)
+  final inline def emit(inline value: T, resume: Unit => R^): R^{resume} = perform(Yield(value), resume)
 }
 
 // TODO allow impure function args?
 
 class MapHandler[A, B, R](f: A -> B)(out: StreamCap[B, R]) extends StreamCap[A, R] {
-  override inline def perform[V](eff: StreamEff[A, V], resume: V => R): R = eff match
+  override inline def perform[V](eff: StreamEff[A, V], resume: V => R): R^{resume} = eff match
     case Yield(a) => out.emit(f(a), _ => resume(()))
 }
 
 class FilterHandler[A, R](p: A -> Boolean)(out: StreamCap[A, R]) extends StreamCap[A, R] {
-  override inline def perform[V](eff: StreamEff[A, V], resume: V => R): R = eff match
+  override inline def perform[V](eff: StreamEff[A, V], resume: V => R): R^{resume} = eff match
     case Yield(a) => if (p(a)) out.emit(a, _ => resume(())) else resume(())
 }
 
 class FoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCap[T, S] {
-  override inline def perform[V](eff: StreamEff[T, V], resume: V => S): S = eff match
+  override inline def perform[V](eff: StreamEff[T, V], resume: V => S): S^{resume} = eff match
     case Yield(v) => {
       current = f(current, v)
       resume(())
@@ -35,12 +35,10 @@ class FoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCa
 
 // Needs resume-capturing perform()
 class SafeFoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCap[T, Bounce[S]] {
-  override def perform[V](eff: StreamEff[T, V], resume: V => Bounce[S]): Bounce[S] = eff match {
+  override def perform[V](eff: StreamEff[T, V], resume: V => Bounce[S]): Bounce[S]^{resume} = eff match {
     case Yield(v) => 
       current = f(current, v)
-      // suspend(resume(()))
-      // Thunk(() => resume(()))
-      ???
+      suspend(resume(()))
   }
   
   def acc: S = current
@@ -62,9 +60,9 @@ object Stream {
     folder.run(prog)
   }
 
-  def fromSeq[T, R](seq: Seq[T], resume: Unit => R)(using s: StreamCap[T, R]): R = {
-    if (seq.isEmpty) resume(()) else s.emit(seq.head, _ => fromSeq(seq.tail, resume))
-  }
+  // def fromSeq[T, R](seq: Seq[T], resume: Unit => R)(using s: StreamCap[T, R]): R^{resume} = {
+  //   if (seq.isEmpty) resume(()) else s.emit(seq.head, _ => fromSeq(seq.tail, resume))
+  // }
 
   // TODO this is the weird pattern again
   inline def fromSeqSafe[T, R, C^, D^](seqq: Seq[T], resume: Unit ->{C} Bounce[R])(using s: StreamCap[T, Bounce[R]^{C}]): Bounce[R]^{s, C, D} = {
@@ -77,10 +75,10 @@ object Stream {
 }
 
 trait ChainedStream[A] {
-  def build[R](finish: Unit => R)(using StreamCap[A, R]): R
+  def build[R](finish: Unit => R)(using out: StreamCap[A, R]): R^{finish, out}
 
   def map[B](f: A -> B): ChainedStream[B]^{this} = new ChainedStream[B] {
-    def build[R](finish: Unit => R)(using out: StreamCap[B, R]): R =
+    def build[R](finish: Unit => R)(using out: StreamCap[B, R]): R^{finish, out} =
       Stream.map(f)(this.build(finish))(using out)
   }
 
@@ -95,12 +93,12 @@ trait ChainedStream[A] {
     }
 }
 
-object ChainedStream {
-  def fromSeq[T](seq: Seq[T]): ChainedStream[T] = new ChainedStream[T] {
-    def build[R](finish: Unit => R)(using cap: StreamCap[T, R]): R =
-      Stream.fromSeq(seq, finish)(using cap)
-  }
-}
+// object ChainedStream {
+//   def fromSeq[T](seq: Seq[T]): ChainedStream[T] = new ChainedStream[T] {
+//     def build[R](finish: Unit => R)(using cap: StreamCap[T, R]): R^{finish, cap} =
+//       Stream.fromSeq(seq, finish)(using cap)
+//   }
+// }
 
 trait SafeChainedStream[A] {
   def build[R](finish: Unit => Bounce[R])(using StreamCap[A, Bounce[R]]): Bounce[R]
@@ -137,6 +135,10 @@ trait SafeChainedStream[A] {
 // }
 
 object Demo {
+  object Fmf {
+    def theSeq: Seq[Int] = IArray.from(0 until 10000)
+  }
+
   def round1(theSeq: Seq[Int]): Int = {
     val folder = new FoldHandler[Int, Int](0)(_ + _)
 
@@ -147,7 +149,8 @@ object Demo {
         val filterer = new FilterHandler[Int, Int](_ % 2 == 0)(mapper)
         
         filterer.run {
-          Stream.fromSeq(theSeq, _ => folder.acc)
+          // Stream.fromSeq(theSeq, _ => folder.acc)
+          ???
         }
       }
     }
@@ -157,27 +160,25 @@ object Demo {
     Stream.fold[Int, Int](0)(_ + _) { folder ?=>
       Stream.map[Int, Int, Int](_ + 1) { 
         Stream.filter[Int, Int](_ % 2 == 0) {
-          Stream.fromSeq(theSeq, _ => folder.acc)
+          // Stream.fromSeq(theSeq, _ => folder.acc)
+          ???
         }
       }
     }
   }
 
-  def round1Chain(theSeq: Seq[Int]): Int = {
-    ChainedStream.fromSeq(theSeq)
-      .filter(_ % 2 == 0)
-      .map(_ + 1)
-      .fold(0)(_ + _)
-  }
-
-  object Fmf {
-    def theSeq: Seq[Int] = IArray.from(0 until 10000)
-  }
-
-  // def round1 = {
-  //   val lol = SafeChainedStream.fromSeq(Fmf.theSeq)
-  //     .filter(x => x % 2 == 0)
-  //     .map(x => x + 1)
-  //     .fold(0)((t, s) => t + s)
+  // def round1Chain(theSeq: Seq[Int]): Int = {
+  //   ChainedStream.fromSeq(theSeq)
+  //     .filter(_ % 2 == 0)
+  //     .map(_ + 1)
+  //     .fold(0)(_ + _)
   // }
+
+
+//   // def round1ChainSafe = {
+//   //   SafeChainedStream.fromSeq(Fmf.theSeq)
+//   //     .filter(x => x % 2 == 0)
+//   //     .map(x => x + 1)
+//   //     .fold(0)((t, s) => t + s)
+//   // }
 }
