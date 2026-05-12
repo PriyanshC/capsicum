@@ -34,7 +34,7 @@ class FoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCa
   def acc: S = current
 }
 
-class SinkHandler[T, R] extends StreamCap[T, Unit] {
+class SinkHandler[T] extends StreamCap[T, Unit] {
   private var sink: mutable.Buffer[T] = mutable.Buffer.empty
   override def perform[V](eff: StreamEff[T, V], resume: V => Unit): Unit = eff match
     case Yield(v) => {
@@ -76,8 +76,8 @@ object Stream {
     folder.run(prog)
   }
 
-  inline def collect[T, R](prog: SinkHandler[T, R] ?=> R): Seq[T] = {
-    val sink = new SinkHandler[T, R]
+  inline def collect[T](prog: SinkHandler[T] ?=> Unit): Seq[T] = {
+    val sink = new SinkHandler[T]
     sink.run(prog)
     sink.collect
   }
@@ -122,6 +122,12 @@ trait ChainedStream[A] {
     Stream.fold(base)(f) { folder ?=>
       this.build(_ => folder.acc)(using folder)
     }
+  
+  def collect: Seq[A] = {
+    Stream.collect { collector ?=>
+      this.build(_ => ())(using collector)
+    }
+  }
 }
 
 object ChainedStream {
@@ -230,5 +236,12 @@ object Demo {
         }
       }
     }
+  }
+
+  def round1WithChainedSink(theSeq: Seq[Int]): Seq[Int] = {
+    ChainedStream.fromSeq(theSeq)
+      .filter(_ % 2 == 0)
+      .map(_ + 1)
+      .collect
   }
 }
