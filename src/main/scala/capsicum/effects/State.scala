@@ -20,12 +20,12 @@ trait StatefulCapability[S, R] extends StateCapability[S, R] {
   def runTuple(prog: this.type ?=> R): (S, R)
 }
 
-class MutableStateHandler[S, R](private var state: S) extends StatefulCapability[S, R] with DirectCap[[V] =>> StateEff[S, V], R] {
+class MutableStateHandler[S, R](private [effects] var state: S) extends StatefulCapability[S, R] with DirectCap[[V] =>> StateEff[S, V], R] {
   override protected inline def apply[V](eff: StateEff[S, V]): V = eff match
     case StateOp.Get() => state
     case StateOp.Put(newState) => state = newState
   
-  final inline def runTuple(prog: this.type ?=> R): (S, R) = {
+  final override inline def runTuple(prog: this.type ?=> R): (S, R) = {
     val r = run(prog)
     (state, r)
   }
@@ -54,11 +54,17 @@ object State {
     val h = new MutableStateHandler[S, R](initial)
     h.runTuple(prog)
   }
-  inline def runPure[S, A](inline prog: PureStateCapability[S, A] ?=> (S -> (S, A))): (S -> (S, A)) = {
+  inline def runMutSafe[S, R](inline initial: S)(inline prog: StatefulCapability[S, Bounce[R]] ?=> Bounce[R]): (S, R) = {
+    val h = new MutableStateHandler[S, Bounce[R]](initial)
+    val (s, b): (S, Bounce[R]) = h.runTuple(prog)
+    val r = b.eval
+    (h.state, r)
+  }
+  inline def runPure[S, A](prog: PureStateCapability[S, A] ?=> (S -> (S, A))): (S -> (S, A)) = {
     val h = new PureStateCapability[S, A]
     h.run(prog)
   }
-  inline def runPureSafe[S, A](inline prog: SafePureStateCapability[S, A] ?=> (S -> Bounce[(S, A)])): (S -> (S, A)) = {
+  inline def runPureSafe[S, A](prog: SafePureStateCapability[S, A] ?=> (S -> Bounce[(S, A)])): (S => (S, A)) = {
     val h = new SafePureStateCapability[S, A]
     val f = h.run(prog)
     (s: S) => f(s).eval
