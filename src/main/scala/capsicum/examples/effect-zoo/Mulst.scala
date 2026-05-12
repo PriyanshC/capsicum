@@ -31,9 +31,6 @@ object Mulst {
     val s = new MutableStateHandler[Int, Ret](0)
     s.run(prog(Mulst.LIMIT)).eval
   }
-    val s = new MutableStateHandler[Int, Ret](0)
-    s.run(prog(Mulst.LIMIT)).eval
-  }
 
   def round2 = {
     type Ret = Bounce[(Int, Int)]
@@ -55,10 +52,6 @@ object Mulst {
       rec(n)
     }
 
-    val s1 = new MutableStateHandler[Int, Ret](0)
-    val s2 = new MutableStateHandler[Int, Ret](0)
-    prog(Mulst.LIMIT)(using s1, s2).eval
-  }
     val s1 = new MutableStateHandler[Int, Ret](0)
     val s2 = new MutableStateHandler[Int, Ret](0)
     prog(Mulst.LIMIT)(using s1, s2).eval
