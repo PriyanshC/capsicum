@@ -1,8 +1,5 @@
 package capsicum.examples
-package capsicum.examples
 
-import capsicum.core._
-import capsicum.effects._
 import capsicum.core._
 import capsicum.effects._
 
