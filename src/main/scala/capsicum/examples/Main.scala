@@ -11,4 +11,5 @@ object Main extends App {
   // basicAsyncProgram()
   // println(Mulst.round5)
   println(Demo.round1ChainSafe(Demo.Fmf.theSeq))
+  println(Demo.round1WithSink(Demo.Fmf.theSeq))
 }

@@ -3,6 +3,7 @@ package capsicum.effects
 import capsicum.core._
 import language.experimental.captureChecking
 import scala.annotation.tailrec
+import scala.collection.mutable
 
 sealed trait StreamEff[+T, V] extends Effect[V]
 case class Yield[T](value: T) extends StreamEff[T, Unit]
@@ -33,6 +34,21 @@ class FoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCa
   def acc: S = current
 }
 
+class SinkHandler[T, R] extends StreamCap[T, Unit] {
+  private var sink: mutable.Buffer[T] = mutable.Buffer.empty
+  override def perform[V](eff: StreamEff[T, V], resume: V => Unit): Unit = eff match
+    case Yield(v) => {
+      sink += v
+      resume(())
+    }
+
+  def collect: Seq[T] = {
+    val collected = sink.toVector
+    sink = mutable.Buffer.empty
+    collected
+  }
+}
+
 // Needs resume-capturing perform()
 class SafeFoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCap[T, Bounce[S]] {
   override def perform[V](eff: StreamEff[T, V], resume: V => Bounce[S]): Bounce[S]^{resume} = eff match {
@@ -60,11 +76,19 @@ object Stream {
     folder.run(prog)
   }
 
+  inline def collect[T, R](prog: SinkHandler[T, R] ?=> R): Seq[T] = {
+    val sink = new SinkHandler[T, R]
+    sink.run(prog)
+    sink.collect
+  }
+
   // TODO this is the weird pattern again
   inline def fromSeq[T, R](seqq: Seq[T], resume: Unit => R)(using s: StreamCap[T, R]): R = {
     def loop(seq: Seq[T]): R = if (seq.isEmpty) resume(()) else s.emit(seq.head, _ => loop(seq.tail))
     loop(seqq)
   }
+
+  inline def fromSeq[T](inline seqq: Seq[T])(using inline s: StreamCap[T, Unit]): Unit = fromSeq(seqq, _ => ())
 
   def fromSeqSafe[T, R](seqq: Seq[T], resume: Unit => Bounce[R])(using s: StreamCap[T, Bounce[R]]): Bounce[R]^{resume, s} = {
     def loop(seq: Seq[T]): Bounce[R]^{resume, s} = {
@@ -154,7 +178,7 @@ object SafeChainedStream {
 
 object Demo {
   object Fmf {
-    def theSeq: Seq[Int] = IArray.from(0 until 10000)
+    def theSeq: Seq[Int] = IArray.from(0 until 1000)
   }
 
   def round1(theSeq: Seq[Int]): Int = {
@@ -196,5 +220,15 @@ object Demo {
       .filter(x => x % 2 == 0)
       .map(x => x + 1)
       .fold(0)((t, s) => t + s)
+  }
+
+  def round1WithSink(theSeq: Seq[Int]): Seq[Int] = {
+    Stream.collect { 
+      Stream.map[Int, Int, Unit](_ + 1) { 
+        Stream.filter[Int, Unit](_ % 2 == 0) {
+          Stream.fromSeq(theSeq)
+        }
+      }
+    }
   }
 }
