@@ -60,6 +60,22 @@ class SafeFoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends Stre
   def acc: S = current
 }
 
+class SafeSinkHandler[T] extends StreamCap[T, Bounce[Seq[T]]] {
+  private var sink: mutable.Buffer[T] = mutable.Buffer.empty
+  
+  override def perform[V](eff: StreamEff[T, V], resume: V => Bounce[Seq[T]]): Bounce[Seq[T]]^{resume} = eff match {
+    case Yield(v) => 
+      sink += v
+      suspend(resume(()))
+  }
+
+  def collect: Seq[T] = {
+    val res = sink.toVector
+    sink = mutable.Buffer.empty
+    res
+  }
+}
+
 object Stream {
   inline def map[A, B, R](inline f: A -> B)(prog: MapHandler[A, B, R] ?=> R)(using inline out: StreamCap[B, R]): R = {
     val mapper = new MapHandler[A, B, R](f)(out)
@@ -163,6 +179,14 @@ trait SafeChainedStream[A] {
     }
     bounce.eval
   }
+
+  def collect: Seq[A] = {
+    val sink = new SafeSinkHandler[A]
+    val bounce = sink.run {
+      this.build(_ => result(sink.collect))(using sink)
+    }
+    bounce.eval
+  }
 }
 
 /***
@@ -240,6 +264,13 @@ object Demo {
 
   def round1WithChainedSink(theSeq: Seq[Int]): Seq[Int] = {
     ChainedStream.fromSeq(theSeq)
+      .filter(_ % 2 == 0)
+      .map(_ + 1)
+      .collect
+  }
+
+  def round1WithSafeChainedSink(theSeq: Seq[Int]): Seq[Int] = {
+    SafeChainedStream.fromSeq(theSeq)
       .filter(_ % 2 == 0)
       .map(_ + 1)
       .collect
