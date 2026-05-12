@@ -48,3 +48,19 @@ class SafePureStateCapability[S, A] extends StateCapability[S, S -> Bounce[(S, A
     r.asInstanceOf[S ->{resume} Bounce[(S, A)]]
   }
 }
+
+object State {
+  inline def runMut[S, R](inline initial: S)(inline prog: StatefulCapability[S, R] ?=> R): (S, R) = {
+    val h = new MutableStateHandler[S, R](initial)
+    h.runTuple(prog)
+  }
+  inline def runPure[S, A](inline prog: PureStateCapability[S, A] ?=> (S -> (S, A))): (S -> (S, A)) = {
+    val h = new PureStateCapability[S, A]
+    h.run(prog)
+  }
+  inline def runPureSafe[S, A](inline prog: SafePureStateCapability[S, A] ?=> (S -> Bounce[(S, A)])): (S -> (S, A)) = {
+    val h = new SafePureStateCapability[S, A]
+    val f = h.run(prog)
+    (s: S) => f(s).eval
+  }
+}
