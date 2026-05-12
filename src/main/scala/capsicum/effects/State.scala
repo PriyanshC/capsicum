@@ -13,13 +13,22 @@ object StateOp {
 trait StateCapability[S, R] extends Capability[[V] =>> StateEff[S, V], R, R] {
   final inline def get(inline resume: S => R): R = perform(StateOp.Get(), resume)
   final inline def put(inline newState: S, inline resume: Unit => R): R = perform(StateOp.Put(newState), resume)
-  inline def update(inline upd: S => S, inline resume: Unit => R): R = get(s => put(upd(s), resume))
+  final inline def update(inline upd: S => S, inline resume: Unit => R): R = get(s => put(upd(s), resume))
 }
 
-class MutableStateHandler[S, R](private var state: S) extends StateCapability[S, R] with DirectCap[[V] =>> StateEff[S, V], R] {
+trait StatefulCapability[S, R] extends StateCapability[S, R] {
+  def runTuple(prog: this.type ?=> R): (S, R)
+}
+
+class MutableStateHandler[S, R](private var state: S) extends StatefulCapability[S, R] with DirectCap[[V] =>> StateEff[S, V], R] {
   override protected inline def apply[V](eff: StateEff[S, V]): V = eff match
     case StateOp.Get() => state
     case StateOp.Put(newState) => state = newState
+  
+  final inline def runTuple(prog: this.type ?=> R): (S, R) = {
+    val r = run(prog)
+    (state, r)
+  }
 }
 
 // TODO bad cast
