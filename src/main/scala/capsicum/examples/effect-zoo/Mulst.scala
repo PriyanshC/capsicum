@@ -3,13 +3,15 @@ package capsicum.examples
 import capsicum.core._
 import capsicum.effects._
 
+import language.experimental.captureChecking
+
 object Mulst {
   def LIMIT = 100
   
   def round1 = {
     type Ret = Bounce[Int]
     type St = StateCapability[Int, Ret]
-    def prog(n: Int)(using s: St): Ret = {
+    inline def prog(n: Int)(using s: St): Ret = {
       def rec(n: Int): Ret = {
         if n <= 0 then s.get(x => result(x)) else {
           s.update(_ + 1, { _ =>
@@ -33,7 +35,7 @@ object Mulst {
   def round2 = {
     type Ret = Bounce[(Int, Int)]
     type St = StateCapability[Int, Ret]
-    def prog(n: Int)(using s1: St, s2: St): Ret = {
+    inline def prog(n: Int)(using s1: St, s2: St): Ret = {
       def rec(n: Int): Ret = {
         if n <= 0 then s1.get(x1 => s2.get(x2 => result(x1, x2))) else {
           s1.update(_ + 1, { _ =>
@@ -58,7 +60,7 @@ object Mulst {
   def round3 = {
     type Ret = Bounce[(Int, Int, Int)]
     type St = StateCapability[Int, Ret]
-    def prog(n: Int)(using s1: St, s2: St, s3: St): Ret = {
+    inline def prog(n: Int)(using s1: St, s2: St, s3: St): Ret = {
       def rec(n: Int): Ret= {
         if n <= 0 then s1.get(x1 => s2.get(x2 => s3.get(x3 => result((x1, x2, x3))))) else {
           s1.update(_ + 1, { _ =>
@@ -83,7 +85,7 @@ object Mulst {
   def round4 = {
     type Ret = Bounce[(Int, Int, Int, Int)]
     type St = StateCapability[Int, Ret]
-    def prog(n: Int)(using s1: St, s2: St, s3: St, s4: St): Ret = {
+    inline def prog(n: Int)(using s1: St, s2: St, s3: St, s4: St): Ret = {
       def rec(n: Int): Ret= {
         if n <= 0 then s1.get(x1 => s2.get(x2 => s3.get(x3 => s4.get(x4 => result((x1, x2, x3, x4)))))) else {
           s1.update(_ + 1, { _ =>
@@ -109,7 +111,7 @@ object Mulst {
   def round5 = {
     type Ret = Bounce[(Int, Int, Int, Int, Int)]
     type St = StateCapability[Int, Ret]
-    def prog(n: Int)(using s1: St, s2: St, s3: St, s4: St, s5: St): Ret = {
+    inline def prog(n: Int)(using s1: St, s2: St, s3: St, s4: St, s5: St): Ret = {
       def rec(n: Int): Ret= {
         if n <= 0 then s1.get(x1 => s2.get(x2 => s3.get(x3 => s4.get(x4 => s5.get(x5 => result((x1, x2, x3, x4, x5))))))) else {
           s1.update(_ + 1, { _ =>
