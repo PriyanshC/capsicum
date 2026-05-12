@@ -20,8 +20,7 @@ object MutableEntry {
   }
 
   def round1 = {
-    val state = new MutableStateHandler[Int, Bounce[Int]](Cdown.LIMIT)
-    state.run(program)
+    State.runMutSafe(Cdown.LIMIT)(program)
   }
 }
 
