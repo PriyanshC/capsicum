@@ -3,6 +3,7 @@ package capsicum.effects
 import capsicum.core._
 import language.experimental.captureChecking
 import scala.annotation.tailrec
+import scala.reflect.ClassTag
 import scala.collection.mutable
 
 sealed trait StreamEff[+T, V] extends Effect[V]
@@ -58,6 +59,30 @@ class SafeFoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends Stre
   }
   
   def acc: S = current
+}
+
+
+class SafeBatchedFoldHandler[T: ClassTag, S](private var current: S, batchSize: Int)(f: (S, Array[T]) -> S) extends StreamCap[T, Bounce[S]] {
+  private val buf = new Array[T](batchSize)
+  private var pos = 0
+
+  override def perform[V](eff: StreamEff[T, V], resume: V => Bounce[S]): Bounce[S]^{resume} = eff match {
+    case Yield(v) => 
+      buf(pos) = v
+      pos += 1
+      if (pos == batchSize) {
+        current = f(current, buf.clone())
+        pos = 0
+      }
+      suspend(resume(()))
+  }
+  
+  def flush(): S = {
+    if (pos > 0) {
+      current = f(current, buf.slice(0, pos))
+    }
+    current
+  }
 }
 
 class SafeSinkHandler[T] extends StreamCap[T, Bounce[Seq[T]]] {
@@ -184,6 +209,14 @@ trait SafeChainedStream[A] {
     val sink = new SafeSinkHandler[A]
     val bounce = sink.run {
       this.build(_ => result(sink.collect))(using sink)
+    }
+    bounce.eval
+  }
+
+  def batchedFold[S](base: S, batchSize: Int = 4096)(f: (S, Array[A]) -> S)(using ClassTag[A]): S = {
+    val folder = new SafeBatchedFoldHandler[A, S](base, batchSize)(f)
+    val bounce = folder.run {
+      this.build(_ => result(folder.flush()))(using folder)
     }
     bounce.eval
   }
