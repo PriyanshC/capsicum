@@ -147,7 +147,7 @@ trait ChainedStream[A] {
     val prev = this
     new ChainedStream[B] {
       def build[R](finish: Unit => R)(using out: StreamCap[B, R]): R^{finish, out} =
-        Stream.map(f)(prev.build(finish))(using out)
+        Stream.map(f)(prev.build(finish))
     }
   }
 
@@ -155,19 +155,17 @@ trait ChainedStream[A] {
     val prev = this
     new ChainedStream[A] {
       def build[R](finish: Unit => R)(using out: StreamCap[A, R]): R^{finish, out} =
-        Stream.filter(p)(prev.build(finish))(using out)
+        Stream.filter(p)(prev.build(finish))
     }
   }
 
   def fold[S](base: S)(f: (S, A) -> S): S =
     Stream.fold(base)(f) { folder ?=>
-      this.build(_ => folder.acc)(using folder)
+      this.build(_ => folder.acc)
     }
   
   def collect: Seq[A] = {
-    Stream.collect { collector ?=>
-      this.build(_ => ())(using collector)
-    }
+    Stream.collect { this.build( _ => ()) }
   }
 }
 
