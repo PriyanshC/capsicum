@@ -16,12 +16,12 @@ trait StreamCap[T, R] extends MonoCapability[[V] =>> StreamEff[T, V], R] {
 
 class MapHandler[A, B, R](f: A -> B)(out: StreamCap[B, R]) extends StreamCap[A, R] {
   override inline def perform[V](eff: StreamEff[A, V], resume: V => R): R^{resume} = eff match
-    case Yield(a) => out.emit(f(a), _ => resume(()))
+    case Yield(a) => out.emit(f(a), resume)
 }
 
 class FilterHandler[A, R](p: A -> Boolean)(out: StreamCap[A, R]) extends StreamCap[A, R] {
   override inline def perform[V](eff: StreamEff[A, V], resume: V => R): R^{resume} = eff match
-    case Yield(a) => if (p(a)) out.emit(a, _ => resume(())) else resume(())
+    case Yield(a) => if (p(a)) out.emit(a, resume) else resume(())
 }
 
 class FoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCap[T, S] {
