@@ -62,7 +62,7 @@ class SafeFoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends Stre
 }
 
 
-class SafeBatchedFoldHandler[T: ClassTag, S](private var current: S, batchSize: Int = 4096)(f: (S, Array[T]) -> S) extends StreamCap[T, Bounce[S]] {
+class SafeBatchedFoldHandler[T: ClassTag, S](private var current: S, batchSize: Int)(f: (S, Array[T]) -> S) extends StreamCap[T, Bounce[S]] {
   private val buf = new Array[T](batchSize)
   private var pos = 0
 
@@ -213,8 +213,8 @@ trait SafeChainedStream[A] {
     bounce.eval
   }
 
-  def batchedFold[S](batchSize: Int, base: S)(f: (S, Array[A]) -> S)(using ClassTag[A]): S = {
-    val folder = new SafeBatchedFoldHandler[A, S](base)(f)
+  def batchedFold[S](base: S, batchSize: Int = 4096)(f: (S, Array[A]) -> S)(using ClassTag[A]): S = {
+    val folder = new SafeBatchedFoldHandler[A, S](base, batchSize)(f)
     val bounce = folder.run {
       this.build(_ => result(folder.flush()))(using folder)
     }
