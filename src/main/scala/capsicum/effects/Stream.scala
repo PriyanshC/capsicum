@@ -2,7 +2,6 @@ package capsicum.effects
 
 import capsicum.core._
 import language.experimental.captureChecking
-import scala.annotation.tailrec
 import scala.reflect.ClassTag
 import scala.collection.mutable
 
@@ -259,10 +258,11 @@ object Demo {
   }
 
   def round1Cleaner(theSeq: Seq[Int]): Int = {
+    val endOfStream = (folder: FoldHandler[Int, Int]) ?=> folder.acc
     Stream.fold[Int, Int](0)(_ + _) { folder ?=>
       Stream.map[Int, Int, Int](_ + 1) { 
         Stream.filter[Int, Int](_ % 2 == 0) {
-          Stream.fromSeq(theSeq, _ => folder.acc)
+          Stream.fromSeq(theSeq, _ => endOfStream)
         }
       }
     }
