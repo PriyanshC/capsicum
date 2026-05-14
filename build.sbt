@@ -1,18 +1,25 @@
-scalaVersion := "3.8.3"
+ThisBuild / scalaVersion := "3.8.3"
 
-libraryDependencies += "io.github.marcinzh" %% "turbolift-core" % "0.124.0"
+ThisBuild / javacOptions ++= Seq("-source", "21", "-target", "21")
+
+ThisBuild / scalacOptions ++= {
+  if (sys.env.contains("CC_DEBUG")) Seq("-Ycc-debug") else Seq.empty
+} ++ Seq("-explain", "-Wimplausible-patterns", "-release", "21")
+
+
+lazy val root = (project in file("."))
+  .settings(
+    name := "capsicum"
+  )
 
 val kyoVersion = "1.0-RC1"
-libraryDependencies += "io.getkyo" %% "kyo-prelude" % kyoVersion
-libraryDependencies += "io.getkyo" %% "kyo-core"    % kyoVersion
-
-javacOptions ++= Seq("-source", "21", "-target", "21")
-
-scalacOptions ++= {
-  if (sys.env.contains("CC_DEBUG")) Seq("-Ycc-debug") else Seq.empty,
-}
-
-scalacOptions ++= Seq("-explain", "-Wimplausible-patterns")
-
-scalacOptions ++= Seq("-release", "21")
-
+lazy val experiments = (project in file("experiments"))
+  .dependsOn(root)
+  .settings(
+    name := "experiments",
+    libraryDependencies ++= Seq(
+      "io.github.marcinzh" %% "turbolift-core" % "0.124.0",
+      "io.getkyo" %% "kyo-prelude" % kyoVersion,
+      "io.getkyo" %% "kyo-core"    % kyoVersion
+    )
+  )
