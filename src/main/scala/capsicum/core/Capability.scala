@@ -29,7 +29,7 @@ trait UniqueCapability[-E <: Effect, -P, R] extends BaseCapability[E, P, R] with
 type MonoCapability[-E <: Effect, R] = Capability[E, R, R]
 
 trait DirectCap[-E <: Effect, R] {
-  this: MonoCapability[E, R] =>
+  this: MonoCapability[E, R]^ =>
     protected def apply[V](eff: E[V]): V
     final override def perform[V](eff: E[V], resume: V => R): R = resume(apply(eff))
 }
