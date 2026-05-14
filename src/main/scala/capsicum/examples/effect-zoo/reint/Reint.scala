@@ -7,7 +7,7 @@ import scala.language.experimental.captureChecking
 object ReintDemo {
   
   class SimpleWriterHandler[T, R](var acc: Vector[T] = Vector.empty) extends WriterCapability[T, R, R] {
-    override def perform[V](eff: Writer[T, V], resume: V => R): R = eff match {
+    override def perform[V](eff: WriterEff[T, V], resume: V => R): R = eff match {
       case Tell(t) => {
         acc = acc :+ t
         resume(t)
