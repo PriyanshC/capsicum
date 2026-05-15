@@ -10,7 +10,7 @@ object ReintDemo {
     override def perform[V](eff: WriterEff[T, V], resume: V => R): R = eff match {
       case Tell(t) => {
         acc = acc :+ t
-        resume(t)
+        resume(())
       }
     }
   }
