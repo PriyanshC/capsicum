@@ -17,6 +17,8 @@ def basicAsyncProgram(): Unit = {
       })
     })
   }
+
+  import scala.concurrent.ExecutionContext.Implicits.global
   
   val handler = new LoomAsyncHandler[Unit]()
   handler.run(prog)
