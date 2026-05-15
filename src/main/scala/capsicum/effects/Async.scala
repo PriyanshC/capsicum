@@ -29,7 +29,7 @@ trait AsyncCapability[R] extends Capability[AsyncEff, R, R] {
   final inline def join[T](inline fiber: Fiber[T], inline resume: T => R): R = perform(AsyncOp.Join(fiber), resume)
 }
 
-class LoomAsyncHandler[R](using ec: ExecutionContext) extends AsyncCapability[R] {
+class VirtualAsyncHandler[R](using ec: ExecutionContext) extends AsyncCapability[R] {
   override def perform[V](eff: AsyncEff[V], resume: V => R): R = eff match
     case f: AsyncOp.Fork[t] => {
       val promise = Promise[t]()
