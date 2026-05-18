@@ -38,7 +38,6 @@ class MutableStateHandler[S, R](private [effects] var state: S) extends Stateful
   }
 }
 
-// TODO bad cast
 class PureStateCapability[S, A] extends StateCapability[S, S -> (S, A)] {
   override def perform[V](eff: StateEff[S, V], resume: V => (S ->{this} (S, A))): S ->{resume} (S, A) = eff match {
     case StateOp.Get() => (currentState: S) => resume(currentState)(currentState)
