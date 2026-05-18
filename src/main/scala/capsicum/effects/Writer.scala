@@ -4,7 +4,7 @@ import capsicum.core._
 import scala.language.experimental.captureChecking
 import scala.collection.mutable.ListBuffer
 
-trait WriterEff[T, V] extends Effect[V]
+sealed trait WriterEff[T, V] extends Effect[V]
 case class Tell[T](t: T) extends WriterEff[T, Unit]
 type Writer[T] = [V] =>> WriterEff[T, V]
 

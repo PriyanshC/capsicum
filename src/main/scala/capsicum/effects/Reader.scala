@@ -3,7 +3,7 @@ package capsicum.effects
 import capsicum.core._
 import scala.language.experimental.captureChecking
 
-trait ReaderEff[T, V] extends Effect[V]
+sealed trait ReaderEff[T, V] extends Effect[V]
 case class Ask[T]() extends ReaderEff[T, T]
 type Reader[T] = [V] =>> ReaderEff[T, V]
 
