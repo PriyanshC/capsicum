@@ -4,13 +4,14 @@ import capsicum.core._
 import language.experimental.captureChecking
 
 sealed trait StateEff[S, V] extends Effect[V]
+type State[S] = [V] =>> StateEff[S, V]
 
 object StateOp {
   case class Get[S]() extends StateEff[S, S]
   case class Put[S](value: S) extends StateEff[S, Unit]
 }
 
-trait StateCapability[S, R] extends Capability[[V] =>> StateEff[S, V], R, R] {
+trait StateCapability[S, R] extends Capability[State[S], R, R] {
   final inline def get(inline resume: S => R): R = perform(StateOp.Get(), resume)
   final inline def put(inline newState: S, inline resume: Unit => R): R = perform(StateOp.Put(newState), resume)
   final inline def update(inline upd: S => S, inline resume: Unit => R): R = get(s => put(upd(s), resume))
