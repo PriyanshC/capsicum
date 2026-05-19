@@ -15,6 +15,15 @@ trait StateCapability[S, R] extends Capability[State[S], R, R] {
   final inline def get(inline resume: S => R): R = perform(StateOp.Get(), resume)
   final inline def put(inline newState: S, inline resume: Unit => R): R = perform(StateOp.Put(newState), resume)
   final inline def update(inline upd: S => S, inline resume: Unit => R): R = get(s => put(upd(s), resume))
+
+  def asReader: ReaderCapability[S, R, R] = new ReaderCapability[S, R, R] {
+    override def perform[V](eff: Reader[S][V], resume: V => R): R = eff match
+      case Ask() => get(resume)
+  }
+  def asWriter: WriterCapability[S, R, R] = new WriterCapability[S, R, R] {
+    override def perform[V](eff: Writer[S][V], resume: V => R): R = eff match
+      case Tell(t) => put(t, resume)
+  }
 }
 
 trait StatefulCapability[S, R] extends StateCapability[S, R] {
