@@ -38,11 +38,7 @@ object PureEntry {
   }
 
   def round1 = {
-    val handler = new SafePureStateCapability[Int, Int]
-    val stateFn: Int -> Bounce[(Int, Int)] = handler.run(program)
-  
-    val (finalState, res) = stateFn(100000).eval 
-    
+    val (finalState, res) = State.runPureSafe(10000)(program)
     res
   }
 }
