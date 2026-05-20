@@ -46,26 +46,3 @@ object PureEntry {
     res
   }
 }
-
-object PureEntryAlt {
-  inline def program(using state: PureStateCapability[Int, Int]): Int -> (Int, Int) = {
-    state.get { initial =>
-      def loop(s: Int): Bounce[Int -> (Int, Int)] = {
-        if (s <= 0) then 
-          result(x => (x, s))
-        else 
-          suspend(loop(s - 1))
-      }
-      loop(initial).eval
-    }
-  }
-
-  def round1 = {
-    val handler = new PureStateCapability[Int, Int]
-    val stateFn: Int -> (Int, Int) = handler.run(program)
-  
-    val (finalState, res) = stateFn(100000)
-    
-    res
-  }
-}
