@@ -13,7 +13,7 @@ object MutableEntry {
   inline def program(using state: StateCapability[Int, Bounce[Int]]) = {
     def rec: Bounce[Int] = {
       state.get { s =>
-        if (s <= 0) then Chunk(s) else state.put(s - 1, _ => Thunk(() => rec))
+        if (s <= 0) then result(s) else state.put(s - 1, _ => suspend(rec))
       }
     }
     rec
