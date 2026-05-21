@@ -69,9 +69,9 @@ object State {
     val h = new MutableStateHandler[S, R](initial)
     h.runTuple(prog)
   }
-  inline def runMutSafe[S, R](inline initial: S)(inline prog: StatefulCapability[S, Bounce[R]] ?=> Bounce[R]): (S, R) = {
+  inline def runMutSafe[S, R](inline initial: S)(inline prog: StateCapability[S, Bounce[R]] ?=> Bounce[R]): (S, R) = {
     val h = new MutableStateHandler[S, Bounce[R]](initial)
-    val (s, b): (S, Bounce[R]) = h.runTuple(prog)
+    val b = h.run(prog)
     val r = b.eval
     (h.state, r)
   }
