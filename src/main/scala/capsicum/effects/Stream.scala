@@ -306,4 +306,14 @@ object Demo {
       .map(_ + 1)
       .collect
   }
+
+  def demoMismatchedCleaner(theSeq: Seq[Int]) = {
+    Stream.collect { 
+      Stream.map[Char, Int, Unit](_ + 1) { 
+        Stream.filter[Int, Unit](_ % 2 == 0) {
+          Stream.fromSeq(theSeq)
+        }
+      }
+    }
+  }
 }
