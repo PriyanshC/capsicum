@@ -49,6 +49,23 @@ class SinkHandler[T] extends StreamCap[T, Unit] {
   }
 }
 
+class BroadcastHandler[T, R, C^, D^] extends StreamCap[T, R] {  
+  private val activeSubscribers: mutable.ListBuffer[StreamCap[T, Unit]^{C}] = mutable.ListBuffer.empty[StreamCap[T, Unit]^{C}]
+
+  def subscribe(subscriber: StreamCap[T, Unit]^{C}): Unit = {
+    activeSubscribers += subscriber
+  }
+
+  def unsubscribe(subscriber: StreamCap[T, Unit]^{C}): Unit = {
+    activeSubscribers -= subscriber
+  }
+
+  override inline def perform[V](eff: StreamEff[T, V], resume: V => R): R^{resume} = eff match
+    case Yield(value) => 
+      activeSubscribers.foreach(_.emit(value, _ => ()))
+      resume(())
+}
+
 // Needs resume-capturing perform()
 class SafeFoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCap[T, Bounce[S]] {
   override def perform[V](eff: StreamEff[T, V], resume: V => Bounce[S]): Bounce[S]^{resume} = eff match {
