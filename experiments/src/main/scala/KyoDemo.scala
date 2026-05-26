@@ -17,5 +17,5 @@ object KyoDemo extends App {
 
     val comp: String < Any = Env.run(noop)(program)
 
-    val res: String = comp.eval
+    // val res: String = comp.eval
 }
