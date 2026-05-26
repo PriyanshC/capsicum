@@ -33,7 +33,7 @@ object Database {
   }
 }
 
-def leak = {
+def scopedLeak = {
   val myStream: Stream[Int] = Database.withConnection { db =>
       // new Mapper[Int, String](db.lookupRow(_))(Printer)
       ???
@@ -42,5 +42,12 @@ def leak = {
   myStream.emit(5)
 }
 
+@main def lazyLeakFail = {
+  val data = LazyList(2, 5, 10)
+  val result = Database.withConnection { db =>
+    val myStream = new Mapper[Int, String](db.lookupRow(_))(Printer)
+    data.map(myStream.emit(_))
+  }
 
-// LAZY also works here!
+  println(scala.util.Try(result.toList))
+}
