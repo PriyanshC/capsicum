@@ -49,6 +49,27 @@ class SinkHandler[T] extends StreamCap[T, Unit] {
   }
 }
 
+trait Subscriber[T] extends StreamCap[T, Unit] {
+  def cont(): Unit
+}
+
+class BroadcastHandler[T, R, C^, D^] extends StreamCap[T, R] {  
+  private val activeSubscribers: mutable.ListBuffer[Subscriber[T]^{C}] = mutable.ListBuffer.empty[Subscriber[T]^{C}]
+
+  def subscribe(subscriber: Subscriber[T]^{C}): Unit = {
+    activeSubscribers += subscriber
+  }
+
+  def unsubscribe(subscriber: Subscriber[T]^{C}): Unit = {
+    activeSubscribers -= subscriber
+  }
+
+  override inline def perform[V](eff: StreamEff[T, V], resume: V => R): R^{resume} = eff match
+    case Yield(value) => 
+      activeSubscribers.foreach(s => s.emit(value, _ => s.cont()))
+      resume(())
+}
+
 // Needs resume-capturing perform()
 class SafeFoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCap[T, Bounce[S]] {
   override def perform[V](eff: StreamEff[T, V], resume: V => Bounce[S]): Bounce[S]^{resume} = eff match {
@@ -171,7 +192,7 @@ trait ChainedStream[A] {
 object ChainedStream {
   def fromSeq[T](seq: Seq[T]): ChainedStream[T] = new ChainedStream[T] {
     def build[R](finish: Unit => R)(using cap: StreamCap[T, R]): R^{finish, cap} =
-      Stream.fromSeq(seq, finish)(using cap)
+      Stream.fromSeq(seq, finish)
   }
 }
 
@@ -182,7 +203,7 @@ trait SafeChainedStream[A] {
     val prev = this
     new SafeChainedStream[B] {
       def build[R](finish: Unit => Bounce[R])(using out: StreamCap[B, Bounce[R]]): Bounce[R]^{finish, out} =
-        Stream.map(f)(prev.build(finish))(using out)
+        Stream.map(f)(prev.build(finish))
     }
   }
 
@@ -197,7 +218,7 @@ trait SafeChainedStream[A] {
   def fold[S](base: S)(f: (S, A) -> S): S = {
     val folder = new SafeFoldHandler[A, S](base)(f)
     val bounce = folder.run {
-      this.build(_ => result(folder.acc))(using folder)
+      this.build(_ => result(folder.acc))
     }
     bounce.eval
   }
@@ -205,7 +226,7 @@ trait SafeChainedStream[A] {
   def collect: Seq[A] = {
     val sink = new SafeSinkHandler[A]
     val bounce = sink.run {
-      this.build(_ => result(sink.collect))(using sink)
+      this.build(_ => result(sink.collect))
     }
     bounce.eval
   }
@@ -213,7 +234,7 @@ trait SafeChainedStream[A] {
   def batchedFold[S](base: S, batchSize: Int = 4096)(f: (S, Array[A]) -> S)(using ClassTag[A]): S = {
     val folder = new SafeBatchedFoldHandler[A, S](base, batchSize)(f)
     val bounce = folder.run {
-      this.build(_ => result(folder.flush()))(using folder)
+      this.build(_ => result(folder.flush()))
     }
     bounce.eval
   }
@@ -231,7 +252,7 @@ trait SafeChainedStream[A] {
 object SafeChainedStream {
   def fromSeq[T](seq: Seq[T]): SafeChainedStream[T] = new SafeChainedStream[T] {
     def build[R](finish: Unit => Bounce[R])(using cap: StreamCap[T, Bounce[R]]): Bounce[R]^{finish, cap} = {
-      Stream.fromSeqSafe(seq, finish)(using cap)
+      Stream.fromSeqSafe(seq, finish)
     }
   }
 }
@@ -305,5 +326,15 @@ object Demo {
       .filter(_ % 2 == 0)
       .map(_ + 1)
       .collect
+  }
+
+  def demoMismatchedCleaner(theSeq: Seq[Int]) = {
+    Stream.collect { 
+      Stream.map[Char, Int, Unit](_ + 1) { 
+        Stream.filter[Int, Unit](_ % 2 == 0) {
+          Stream.fromSeq(theSeq)
+        }
+      }
+    }
   }
 }
