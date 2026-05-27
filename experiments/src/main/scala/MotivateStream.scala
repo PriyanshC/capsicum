@@ -1,6 +1,7 @@
 package example.motivation.stream
 
 import example.motivation._
+import scala.util.Try
 
 trait Stream[A]  {
   def emit(x: A): Unit
@@ -30,4 +31,16 @@ class Mapper[A, B](f: A => B)(out: Stream[B]) extends Stream[A] {
   }
 
   println(scala.util.Try(result.toList))
+}
+
+object TurboliftStreamEx extends App {
+  import turbolift.effects.IO
+  import beam.Stream
+
+  val stream = Database.withConnection { db =>
+    Stream.from(Seq(1,2,3)).mapEff(x => IO(Try(db.fetchName(x)))).foldLeft(Nil)((xs, x) => x :: xs)
+  }
+
+  val result = stream.runIO.get
+  println(result)
 }
