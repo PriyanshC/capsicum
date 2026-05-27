@@ -3,18 +3,18 @@ package example.motivation.state
 import example.motivation._
 import scala.util.Try
 
-trait State[S] {
-  def get(): S
-  def put(s: S): Unit
-}
-
-class MyState[S](private var state: S) extends State[S] {
-  override def get(): S = state
-  override def put(s: S): Unit = state = s
-}
-
 
 object StateEx extends App {
+  trait State[S] {
+    def get(): S
+    def put(s: S): Unit
+  }
+
+  class MyState[S](private var state: S) extends State[S] {
+    override def get(): S = state
+    override def put(s: S): Unit = state = s
+  }
+
   val state: State[Option[Database]] = new MyState(None)
   
   Database.withConnection { db =>
@@ -34,7 +34,6 @@ object StateExKyo extends App {
     Var.set[Option[Database]](Database.withConnection(db => Some(db)))
       .andThen(Var.use[Option[Database]] { db =>
         Try(db.get.fetchName(1))
-
       })
   }
 
@@ -42,3 +41,20 @@ object StateExKyo extends App {
   println(result)
 }
 
+
+@main def stateExTurbolift() = {
+  import turbolift.!!
+  import turbolift.effects.StateEffect
+
+  case object State extends StateEffect[Option[Database]]
+  type State = State.type
+
+  def prog: Try[String] !! State = {
+    State.put(Database.withConnection(db => Some(db))) &&!
+    State.gets { db =>
+      Try(db.get.fetchName(1))
+    }
+  }
+  val result = prog.handleWith(State.handler(None).eval).run
+  println(result)
+}
