@@ -1,4 +1,4 @@
-package example
+package example.motivation
 
 // Some simple user app we wish to write
 trait Database {
