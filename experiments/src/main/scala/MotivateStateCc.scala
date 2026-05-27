@@ -8,7 +8,7 @@ object StateExKyoCc extends App {
   import kyo._
 
   def prog: Try[String] < Var[Option[Database]] = {
-    Var.set[Option[Database]](Database.withConnection(db => Some(db)))//Database.withConnection(db => Some(db))
+    // Var.set[Option[Database]](DatabaseTracked.withConnection(db => Some(db)))
       // .andThen
       // (Var.use[Option[Database]] { db =>
       //   Try(db.get.fetchName(1))
@@ -26,4 +26,23 @@ object StateExKyoCc extends App {
       .andThen(())
   }
   */
+}
+
+
+@main def stateExTurboliftCc() = {
+  import turbolift.!!
+  import turbolift.effects.StateEffect
+
+  case object State extends StateEffect[Option[Database]]
+  type State = State.type
+
+  def prog: Try[String] !! State = {
+    // Correctly fails to compile this..
+    // State.put(DatabaseTracked.withConnection(db => Some(db))) &&!
+    State.gets { db =>
+      Try(db.get.fetchName(1))
+    }
+  }
+  val result = prog.handleWith(State.handler(None).dropState).run
+  println(result)
 }
