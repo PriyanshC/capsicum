@@ -1,0 +1,44 @@
+package example.motivation.state
+
+import example.motivation._
+import scala.util.Try
+
+trait State[S] {
+  def get(): S
+  def put(s: S): Unit
+}
+
+class MyState[S](private var state: S) extends State[S] {
+  override def get(): S = state
+  override def put(s: S): Unit = state = s
+}
+
+
+object StateEx extends App {
+  val state: State[Option[Database]] = new MyState(None)
+  
+  Database.withConnection { db =>
+    state.put(Some(db))
+  }
+
+  val result = state.get().map { db =>
+    Try(db.fetchName(1))
+  }
+  println(result)
+}
+
+object StateExKyo extends App {
+  import kyo._
+
+  def prog: Try[String] < Var[Option[Database]] = {
+    Var.set[Option[Database]](Database.withConnection(db => Some(db)))
+      .andThen(Var.use[Option[Database]] { db =>
+        Try(db.get.fetchName(1))
+
+      })
+  }
+
+  val result = prog.handle(Var.run(None))
+  println(result)
+}
+

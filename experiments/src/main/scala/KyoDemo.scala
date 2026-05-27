@@ -19,3 +19,10 @@ object KyoDemo extends App {
 
     // val res: String = comp.eval
 }
+
+
+object KyoDemoMinimal extends App {
+    val program: Unit < Env[String] = Env.use[String] { s => println(s) }
+    val comp = Env.run("Hello world")(program)
+    // val result = comp.eval
+}
