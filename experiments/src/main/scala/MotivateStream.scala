@@ -23,7 +23,7 @@ class Mapper[A, B](f: A => B)(out: Stream[B]) extends Stream[A] {
   myStream.emit(5)
 }
 
-@main def vanillaLazyLeakFail = {
+@main def vanillaLazyLeak = {
   val data = LazyList(2, 5, 10)
   val result = Database.withConnection { db =>
     val myStream = new Mapper[Int, String](db.fetchName(_))(Printer)
