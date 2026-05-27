@@ -1,4 +1,4 @@
-package example
+package experiments.libs.turbolift
 
 import turbolift._
 import turbolift.Extensions._
@@ -27,7 +27,7 @@ object TurboLiftDemo extends App {
 
     val cont: () => Unit = {
         val h: Handler[[A] =>> Identity[A], Option, MyFnProducer.type, Any]^ = MyFnProducer.noop()
-        val program: turbolift.Computation[() => Unit, example.MyFnProducer.type] = MyFnProducer.produce()
+        val program: turbolift.Computation[() => Unit, MyFnProducer.type] = MyFnProducer.produce()
         program.handleWith(h).run.get
     }
 

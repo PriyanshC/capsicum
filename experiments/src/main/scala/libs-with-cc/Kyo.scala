@@ -1,4 +1,4 @@
-package example
+package experiments.libs.kyo
 
 import kyo._
 import language.experimental.captureChecking

@@ -24,7 +24,7 @@ lazy object ContinuationLeakDemo {
       }
       
       /* ERROR: Capability `resume` cannot flow into capture set {} */
-      resume(leakingInner) // NOT ERROR! BAD!
+      resume(leakingInner) // NOT ERROR! BAD! Reason: GADT match refinement. Using PDT fixes this
       
       // ???
     }

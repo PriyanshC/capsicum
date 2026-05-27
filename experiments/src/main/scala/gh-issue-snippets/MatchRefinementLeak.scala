@@ -1,4 +1,4 @@
-package sandbox.pcl
+package experiments.issues.paramleak
 
 import caps._
 import scala.language.experimental.captureChecking
