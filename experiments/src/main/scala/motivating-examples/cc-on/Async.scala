@@ -16,19 +16,13 @@ object Reader {
 
   def run[A](env: String)(prog: Reader[String] ?=> A): A = {
     threadContext.set(env)
-    try {
       val capability = new Reader[String] {
-        def ask(): String = {
-          val value = threadContext.get()
-          if value == null then throw new RuntimeException("ThreadStorage empty")
-          value
-        }
+        def ask(): String = threadContext.get()
       }
       
-      prog(using capability)
-    } finally {
+      val result = prog(using capability)
       threadContext.remove()
-    }
+      result
   }
 }
 
