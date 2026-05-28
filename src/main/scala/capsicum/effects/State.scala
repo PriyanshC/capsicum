@@ -54,6 +54,14 @@ class PureStateCapability[S, A] extends StateCapability[S, S -> (S, A)] {
   }
 }
 
+class PurerStateCapability[S, A] extends StateCapability[S, S -> S] {
+  override def perform[V](eff: StateEff[S, V], resume: V => (S ->{this} S)): S ->{resume} S = eff match {
+    case StateOp.Get() => (currentState: S) => resume(currentState)(currentState)
+    case StateOp.Put(newState) => (_: S) => resume(())(newState)
+  }
+}
+
+
 class SafePureStateCapability[S, A] extends StateCapability[S, S -> Bounce[(S, A)]] {
   override def perform[V](eff: StateEff[S, V], resume: V => (S ->{this} Bounce[(S, A)])): S ->{resume} Bounce[(S, A)] = {
     val r = eff match {
