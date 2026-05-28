@@ -1,4 +1,4 @@
-package experiments.motivation
+package experiments.motivation.ccoff
 
 // Some simple user app we wish to write
 trait Database {
@@ -20,17 +20,15 @@ object Database {
   }
 }
 
-
-object App extends App {
-
-  // Standard application logic
+object DatabaseExample {
   def fetchAllNames(ids: Iterable[Int]): Iterable[String] = {
     Database.withConnection { db =>
       ids.map(db.fetchName(_))
     }
   }
 
-  // Lazy code is dangerous here
-  val names = fetchAllNames(LazyList(2, 5, 10))
-  println(scala.util.Try(names.toList))
+  @main def runDatabaseExample(): Unit = {
+    val names = fetchAllNames(LazyList(2, 5, 10))
+    println(scala.util.Try(names.toList))
+  }
 }

@@ -1,4 +1,4 @@
-package experiments.motivation.async
+package experiments.motivation.ccon.async
 
 import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.duration._
@@ -9,7 +9,7 @@ import kyo.KyoApp
 import scala.language.experimental.captureChecking
 
 
-object KyoAsyncExCC extends KyoApp {
+object KyoCc extends KyoApp {
   import kyo._
   run {
     // val prog: String < ((Async^) & Env[Reader[String]]) = {

@@ -1,6 +1,9 @@
-package experiments.motivation
+package experiments.motivation.ccon
 
+import experiments.motivation.ccoff._
 import scala.language.experimental.captureChecking
+
+export experiments.motivation.ccoff.Database
 
 object DatabaseTracked {
   def withConnection[R](exc: Database^ => R): R^ = {

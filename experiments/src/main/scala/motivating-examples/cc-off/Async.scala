@@ -1,4 +1,4 @@
-package experiments.motivation.async
+package experiments.motivation.ccoff.async
 
 import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.duration._
@@ -27,34 +27,36 @@ object Reader {
 }
 
 
-@main def asyncEx() = {
-  trait Async {
-    def fork[A](prog: () => A): Future[A]
-  }
-
-  class MyAsync extends Async {
-    override def fork[A](prog: () => A): Future[A] = Future(prog())
-  }
-  val async = MyAsync()
-
-  val fut: Future[String] = Reader.run("ID-5") {
-    val env = summon[Reader[String]]
-    
-    async.fork { () =>
-      Thread.sleep(2.seconds.toMillis)
-      
-      val traceId = env.ask() 
-      s"Processed with id=$traceId"
+object Vanilla {
+  @main def asyncEx() = {
+    trait Async {
+      def fork[A](prog: () => A): Future[A]
     }
-  }
 
-  Try(Await.result(fut, 5.seconds)).fold(
-    ex => println(s"Task failed with: ${ex.getMessage}"),
-    res => println(s"Success: $res")
-  )
+    class MyAsync extends Async {
+      override def fork[A](prog: () => A): Future[A] = Future(prog())
+    }
+    val async = MyAsync()
+
+    val fut: Future[String] = Reader.run("ID-5") {
+      val env = summon[Reader[String]]
+      
+      async.fork { () =>
+        Thread.sleep(2.seconds.toMillis)
+        
+        val traceId = env.ask() 
+        s"Processed with id=$traceId"
+      }
+    }
+
+    Try(Await.result(fut, 5.seconds)).fold(
+      ex => println(s"Task failed with: ${ex.getMessage}"),
+      res => println(s"Success: $res")
+    )
+  }
 }
 
-object KyoAsyncEx extends KyoApp {
+object Kyo extends KyoApp {
   import kyo._
   run {
     val prog: String < (Async & Env[Reader[String]]) = 
