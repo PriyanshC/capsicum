@@ -43,7 +43,7 @@ object TurboliftStreamEx {
     import beam.Stream
 
     val stream = Database.withConnection { db =>
-      Stream.from(Seq(1,2,3)).mapEff(x => IO(Try(db.fetchName(x)))).foldLeft(Nil)((xs, x) => x :: xs)
+      Stream.from(Seq(1,2,3)).mapEff(x => IO(Try(db.fetchName(x)))).toList
     }
 
     val result = stream.runIO.get
