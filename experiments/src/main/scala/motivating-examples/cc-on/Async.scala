@@ -3,47 +3,78 @@ package experiments.motivation.async
 import scala.concurrent.{Await, Future, Promise}
 import scala.concurrent.duration._
 import scala.util.Try
+import scala.concurrent.ExecutionContext.Implicits.global
+import kyo.KyoApp
 
 
 trait Reader[T] {
   def ask(): T
 }
 
-trait Async {
-  def fork[A](prog: () => A): Future[A]
-}
+object Reader {
+  private val threadContext = new ThreadLocal[String]
 
-class MyAsync extends Async {
-  override def fork[A](task: () => A): Future[A] = {
-      val promise = Promise[A]()
-      Thread.ofVirtual().start(() => promise.complete(Try(task())))
-      promise.future
+  def run[A](env: String)(prog: Reader[String] ?=> A): A = {
+    threadContext.set(env)
+    try {
+      val capability = new Reader[String] {
+        def ask(): String = {
+          val value = threadContext.get()
+          if value == null then throw new RuntimeException("rip")
+          value
+        }
+      }
+      
+      prog(using capability)
+    } finally {
+      threadContext.remove()
+    }
   }
-}
-
-class MyEnv[T](env: T) extends Reader[T] {
-  override def ask(): T = env
 }
 
 
 @main def asyncEx() = {
-  implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
+  trait Async {
+    def fork[A](prog: () => A): Future[A]
+  }
 
-  def process(async: Async, env: Reader[String]): Future[String] = {
+  class MyAsync extends Async {
+    override def fork[A](prog: () => A): Future[A] = Future(prog())
+  }
+  val async = MyAsync()
+
+  val fut: Future[String] = Reader.run("ID-5") {
+    val env = summon[Reader[String]]
+    
     async.fork { () =>
+      Thread.sleep(2.seconds.toMillis)
+      
       val traceId = env.ask() 
       s"Processed with id=$traceId"
     }
   }
 
-  val async = MyAsync()
-
-  val fut = {
-    val env = MyEnv("1")
-    val fut = async.fork(() => {Thread.sleep(2.second.toMillis); process(async, env)})
-    fut
-  }
-
-  val result = Await.result(fut, 5.seconds).onComplete(println)
+  Try(Await.result(fut, 5.seconds)).fold(
+    ex => println(s"Task failed with: ${ex.getMessage}"),
+    res => println(s"Success: $res")
+  )
 }
 
+object KyoAsyncEx extends KyoApp {
+  import kyo._
+  run {
+    val prog: String < (Async & Env[String]) = 
+      for {
+        _ <- Async.sleep(2.seconds)
+        traceId <- Env.get[String]
+      } yield s"Processed with id=$traceId"
+
+    val handledEnv: String < Async = Env.run("TraceID-999")(prog)
+
+    Abort.run(Async.timeout(5.seconds)(handledEnv)).map {
+      case Result.Success(res) => println(s"Success: $res")
+      case Result.Panic(ex)    => println(s"Task failed with: ${ex.getMessage}")
+      case Result.Failure(ex)  => println(s"Task failed with: ${ex.getMessage}")
+    }
+  }
+}
