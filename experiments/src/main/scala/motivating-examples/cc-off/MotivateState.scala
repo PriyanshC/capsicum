@@ -1,7 +1,8 @@
-package example.motivation.state
+package experiments.motivation.state
 
-import example.motivation._
+import experiments.motivation._
 import scala.util.Try
+import kyo.KyoApp
 
 
 object StateEx extends App {
@@ -27,7 +28,7 @@ object StateEx extends App {
   println(result)
 }
 
-object StateExKyo extends App {
+object StateExKyo extends KyoApp {
   import kyo._
 
   def prog: Try[String] < Var[Option[Database]] = {

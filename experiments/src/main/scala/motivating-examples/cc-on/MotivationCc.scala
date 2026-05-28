@@ -1,4 +1,4 @@
-package example.motivation
+package experiments.motivation
 
 import scala.language.experimental.captureChecking
 

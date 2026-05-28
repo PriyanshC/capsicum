@@ -1,6 +1,6 @@
-package example.motivation.stream
+package experiments.motivation.stream
 
-import example.motivation._
+import experiments.motivation._
 import scala.util.Try
 
 trait Stream[A]  {

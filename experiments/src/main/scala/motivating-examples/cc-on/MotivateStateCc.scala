@@ -1,6 +1,6 @@
-package example.motivation.state
+package experiments.motivation.state
 
-import example.motivation._
+import experiments.motivation._
 import scala.util.Try
 import scala.language.experimental.captureChecking
 
