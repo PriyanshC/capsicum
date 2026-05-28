@@ -20,7 +20,7 @@ object Reader {
       val capability = new Reader[String] {
         def ask(): String = {
           val value = threadContext.get()
-          if value == null then throw new RuntimeException("rip")
+          if value == null then throw new RuntimeException("ThreadStorage empty")
           value
         }
       }
@@ -63,13 +63,18 @@ object Reader {
 object KyoAsyncEx extends KyoApp {
   import kyo._
   run {
-    val prog: String < (Async & Env[String]) = 
+    val prog: String < (Async & Env[Reader[String]]) = 
       for {
         _ <- Async.sleep(2.seconds)
-        traceId <- Env.get[String]
+        env <- Env.get[Reader[String]]
+        traceId = env.ask()
       } yield s"Processed with id=$traceId"
 
-    val handledEnv: String < Async = Env.run("TraceID-999")(prog)
+
+    val handledEnv: String < Async = Reader.run("ID-5") { env ?=>
+      Env.run(env)(prog)
+    }
+    
 
     Abort.run(Async.timeout(5.seconds)(handledEnv)).map {
       case Result.Success(res) => println(s"Success: $res")
