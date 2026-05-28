@@ -79,3 +79,29 @@ object Kyo extends KyoApp {
     }
   }
 }
+
+
+object Turbolift {
+  import turbolift._
+  import turbolift.effects.{ReaderEffect, IO}
+
+  case object TraceEnv extends ReaderEffect[Reader[String]]
+
+  @main def runTurboliftApp() = {
+    val prog = for {
+      _   <- IO.sleep(2.seconds)
+      env <- TraceEnv.ask
+      traceId = env.ask()
+    } yield s"Processed with id=$traceId"
+
+
+    val handledEnv = Reader.run("ID-5") { env ?=>
+      prog.handleWith(TraceEnv.handler(env))
+    }
+
+    val finalProg = IO.timeout(handledEnv, 5.seconds)
+
+    val result = finalProg.runIO
+    println(result)
+  }
+}
