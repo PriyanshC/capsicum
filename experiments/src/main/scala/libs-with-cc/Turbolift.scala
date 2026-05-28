@@ -1,4 +1,4 @@
-package example
+package experiments.libs.turbolift
 
 import turbolift._
 import turbolift.Extensions._
@@ -13,8 +13,8 @@ trait FnProducerEffect extends Effect[FnProducerSignature] with FnProducerSignat
     final override def produce() = perform(_.produce())
 
 extension (px: FnProducerEffect)
-    def noop = 
-        new px.impl.Stateless[Identity, Option, Any] with px.impl.Sequential with FnProducerSignature {
+    def noop: () => Handler[[A] =>> Identity[A], Option, px.type, Any]^{caps.fresh} = 
+        () => new px.impl.Stateless[Identity, Option, Any] with px.impl.Sequential with FnProducerSignature with caps.SharedCapability {
             override def onReturn(a: Unknown) = !!.pure(Some(a))
             // override def produce() = !!.pure(() => ())
             override def produce() = {println("No-op function called!"); !!.pure(this.produce)} // Leak?
@@ -24,10 +24,14 @@ case object MyFnProducer extends FnProducerEffect
 type MyFnProducer = MyFnProducer.type
 
 object TurboLiftDemo extends App {
-    val program: turbolift.Computation[() => Unit, example.MyFnProducer.type] = MyFnProducer.produce()
-        
-    val cont: Option[() => Unit] = program.handleWith(MyFnProducer.noop).run
 
+    val cont: () => Unit = {
+        val h: Handler[[A] =>> Identity[A], Option, MyFnProducer.type, Any]^ = MyFnProducer.noop()
+        val program: turbolift.Computation[() => Unit, MyFnProducer.type] = MyFnProducer.produce()
+        program.handleWith(h).run.get
+    }
+
+    println("Exec done!")
     println(cont)
-    val a = cont.map(_())
+    val a = cont()
 }

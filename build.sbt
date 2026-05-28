@@ -19,6 +19,7 @@ lazy val experiments = (project in file("experiments"))
     name := "experiments",
     libraryDependencies ++= Seq(
       "io.github.marcinzh" %% "turbolift-core" % "0.124.0",
+      "io.github.marcinzh" %% "beam-core" % "0.20.0",
       "io.getkyo" %% "kyo-prelude" % kyoVersion,
       "io.getkyo" %% "kyo-core"    % kyoVersion
     )
