@@ -2,15 +2,13 @@ package experiments.issues.suspendparams
 
 import language.experimental.captureChecking
 
-// State
-sealed trait State[S, R] {
+trait State[S, R] {
   def get(resume: S => R): R^{resume}
   def put(newState: S, resume: Unit => R): R^{resume}
 }
 
-def run[S1 <: State[?, R], S2 <: State[?, R], R](s1: S1, s2: S2)(prog: (S1, S2) ?-> R): R = prog(using s1, s2)
+def run2[S1 <: State[?, R], S2 <: State[?, R], R](s1: S1, s2: S2)(prog: (S1, S2) ?=> R): R = prog(using s1, s2)
 
-// Prog
 inline def program(using sum: State[Long, (Int, Long)]): (Int, Long) = {
   def rec(x: Int): (Int, Long) = {
     sum.get { s0 =>
@@ -23,8 +21,6 @@ inline def program(using sum: State[Long, (Int, Long)]): (Int, Long) = {
   rec(10)
 }
 
-def runProg(other: State[?, (Int, Long)], sum: State[Long, (Int, Long)]) = {
-  run(other, sum) { (_, s) ?=> 
-    program(using s)
-  }
+def runProgram(other: State[?, (Int, Long)], sum: State[Long, (Int, Long)]) = {
+  run2(other, sum)((_, s) ?=> program(using s))
 }
