@@ -5,8 +5,8 @@ import scala.annotation.tailrec
 
 class Bounce[A]
 
-def suspend[A, C^, D^](x: ->{C} Bounce[A]^{D}): Bounce[A]^{C, D} = new Bounce[A]
-inline def result[A](x: A): Bounce[A] = new Bounce[A]
+def suspend[A, C^, D^](x: ->{C} Bounce[A]^{D}): Bounce[A]^{C, D} = ???
+inline def result[A](x: A): Bounce[A] = ???
 
 
 // Cap
@@ -37,11 +37,6 @@ trait StateCapability[S, R] extends BaseCapability[State[S], R, R] with caps.Sha
   final inline def update(inline upd: S => S, inline resume: Unit => R): R = get(s => put(upd(s), resume))
 }
 
-
-class MutableStateHandler[S, R](var state: S) extends StateCapability[S, R] {
-  override def perform[V](eff: State[S][V], resume: V => R): R = ???
-}
-
 // Prog
 
 object Sumh {
@@ -60,8 +55,8 @@ object Sumh {
   }
 
   def round1 = {
-    val state = new MutableStateHandler[Int, Bounce[(Int, Long)]](0)
-    val sum = new MutableStateHandler[Long, Bounce[(Int, Long)]](0L)
+    val state: StateCapability[Int, Bounce[(Int, Long)]] = ???
+    val sum: StateCapability[Long, Bounce[(Int, Long)]] = ???
     val bounce = run(state, sum)(program)
   }
 }
