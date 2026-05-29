@@ -7,7 +7,7 @@ trait State[S, R] {
   def put(newState: S, resume: Unit => R): R^{resume}
 }
 
-def run[S1 <: State[?, R], S2 <: State[?, R], R](s1: S1, s2: S2)(prog: (S1, S2) => R): R = prog(s1, s2)
+def run[S1 <: State[?, (Int, Long)], S2 <: State[?, (Int, Long)]](s1: S1, s2: S2)(prog: (S1, S2) => (Int, Long)): (Int, Long) = prog(s1, s2)
 
 inline def program(sum: State[Long, (Int, Long)]): (Int, Long) = {
   def rec(x: Int): (Int, Long) = {
