@@ -10,7 +10,6 @@ inline def result[A](x: A): Bounce[A] = ???
 
 
 // Cap
-trait Effect[V]
 sealed trait State[S, R] {
   def perform[V](eff: StateEff[S, V], resume: V => R): R^{resume}
   final inline def get(inline resume: S => R): R = perform(StateOp.Get(), resume)
@@ -26,7 +25,7 @@ k1: K1, k2: K2
 
 // State
 
-sealed trait StateEff[S, V] extends Effect[V]
+sealed trait StateEff[S, V]
 
 object StateOp {
   case class Get[S]() extends StateEff[S, S]
