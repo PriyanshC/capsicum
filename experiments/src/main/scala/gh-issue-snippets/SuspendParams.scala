@@ -15,7 +15,7 @@ inline def program(using sum: State[Long, (Int, Long)]): (Int, Long) = {
   def rec(x: Int): (Int, Long) = {
     sum.get { s0 =>
       val s = s0 + x
-      sum.put(s, {_ =>
+      sum.put(s, _ => {
         if x > 0 then rec(x - 1) else (x, s)
       })
     }
