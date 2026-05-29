@@ -11,11 +11,14 @@ inline def result[A](x: A): Bounce[A] = ???
 
 // Cap
 trait Effect[V]
-sealed trait BaseCapability[-E <: Effect, -P, R] {
-  def perform[V](eff: E[V], resume: V => P): R^{resume}
+sealed trait State[S, R] {
+  def perform[V](eff: StateEff[S, V], resume: V => R): R^{resume}
+  final inline def get(inline resume: S => R): R = perform(StateOp.Get(), resume)
+  final inline def put(inline newState: S, inline resume: Unit => R): R = perform(StateOp.Put(newState), resume)
+  final inline def update(inline upd: S => S, inline resume: Unit => R): R = get(s => put(upd(s), resume))
 }
 
-def run[K1 <: BaseCapability[?, ?, R], K2 <: BaseCapability[?, ?, R], R](
+def run[K1 <: State[?, R], K2 <: State[?, R], R](
 k1: K1, k2: K2
 )(prog: (K1, K2) ?-> R): R = {
   prog(using k1, k2)
@@ -24,18 +27,13 @@ k1: K1, k2: K2
 // State
 
 sealed trait StateEff[S, V] extends Effect[V]
-type State[S] = [V] =>> StateEff[S, V]
 
 object StateOp {
   case class Get[S]() extends StateEff[S, S]
   case class Put[S](value: S) extends StateEff[S, Unit]
 }
 
-trait StateCapability[S, R] extends BaseCapability[State[S], R, R] with caps.SharedCapability {
-  final inline def get(inline resume: S => R): R = perform(StateOp.Get(), resume)
-  final inline def put(inline newState: S, inline resume: Unit => R): R = perform(StateOp.Put(newState), resume)
-  final inline def update(inline upd: S => S, inline resume: Unit => R): R = get(s => put(upd(s), resume))
-}
+trait StateCapability[S, R] extends State[S, R] with caps.SharedCapability
 
 // Prog
 
