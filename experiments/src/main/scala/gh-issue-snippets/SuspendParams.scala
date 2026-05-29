@@ -16,16 +16,12 @@ sealed trait State[S, R] {
   final inline def update(inline upd: S => S, inline resume: Unit => R): R = get(s => put(upd(s), resume))
 }
 
-def run[K1 <: State[?, R], K2 <: State[?, R], R](
-  k1: K1, k2: K2
-)(prog: (K1, K2) ?-> R): R = {
-  prog(using k1, k2)
-}
+def run[S1 <: State[?, R], S2 <: State[?, R], R](s1: S1, s2: S2)(prog: (S1, S2) ?-> R): R = prog(using s1, s2)
 
 sealed trait StateOp[S, V]
 object StateOp {
   case class Get[S]() extends StateOp[S, S]
-  case class Put[S](value: S) extends StateOp[S, Unit]
+  case class Put[S](v: S) extends StateOp[S, Unit]
 }
 
 // Prog
