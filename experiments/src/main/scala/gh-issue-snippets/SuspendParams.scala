@@ -23,8 +23,8 @@ inline def program(using sum: State[Long, (Int, Long)]): (Int, Long) = {
   rec(10)
 }
 
-def runProg(count: State[Int, (Int, Long)], sum: State[Long, (Int, Long)]) = {
-  run(count, sum) { (c, s) ?=> 
+def runProg(other: State[?, (Int, Long)], sum: State[Long, (Int, Long)]) = {
+  run(other, sum) { (_, s) ?=> 
     program(using s)
   }
 }
