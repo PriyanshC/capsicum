@@ -1,14 +1,14 @@
 package experiments.issues.suspendparams
 
 import language.experimental.captureChecking
-import scala.annotation.tailrec
 
+// Bounce
 class Bounce[A]
 
 def suspend[A, C^, D^](x: ->{C} Bounce[A]^{D}): Bounce[A]^{C, D} = ???
 inline def result[A](x: A): Bounce[A] = ???
 
-// Cap
+// State
 sealed trait State[S, R] {
   def perform[V](eff: StateOp[S, V], resume: V => R): R^{resume}
   final inline def get(inline resume: S => R): R = perform(StateOp.Get(), resume)
@@ -40,7 +40,7 @@ object Sumh {
   }
 
   def runProg(count: State[Int, Bounce[(Int, Long)]], sum: State[Long, Bounce[(Int, Long)]]) = {
-    val bounce = run(count, sum) { (c, s) ?=> 
+    run(count, sum) { (c, s) ?=> 
       program(using c, s)
     }
   }
