@@ -38,16 +38,8 @@ trait StateCapability[S, R] extends BaseCapability[State[S], R, R] with caps.Sha
 }
 
 
-class MutableStateHandler[S, R](var state: S) extends StateCapability[S, R] with DirectCap[[V] =>> StateEff[S, V], R] {
-  override protected inline def apply[V](eff: StateEff[S, V]): V = eff match
-    case StateOp.Get() => state
-    case StateOp.Put(newState) => state = newState
-}
-
-trait DirectCap[-E <: Effect, R] {
-  this: BaseCapability[E, R, R]^ =>
-    protected def apply[V](eff: E[V]): V
-    final override def perform[V](eff: E[V], resume: V => R): R = resume(apply(eff))
+class MutableStateHandler[S, R](var state: S) extends StateCapability[S, R] {
+  override def perform[V](eff: State[S][V], resume: V => R): R = ???
 }
 
 // Prog
