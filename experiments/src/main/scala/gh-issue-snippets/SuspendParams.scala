@@ -7,10 +7,11 @@ trait State[S, R] {
   def put(newState: S, resume: Unit => R): R^{resume}
 }
 
-def run[S1 <: State[?, (Int, Long)], S2 <: State[?, (Int, Long)]](s1: S1, s2: S2)(prog: (S1, S2) => (Int, Long)): (Int, Long) = prog(s1, s2)
+type R = (Int, Long)
+def run[S1 <: State[?, R], S2 <: State[?, R]](s1: S1, s2: S2)(prog: (S1, S2) => R): R = prog(s1, s2)
 
-inline def program(sum: State[Long, (Int, Long)]): (Int, Long) = {
-  def rec(x: Int): (Int, Long) = {
+inline def program(sum: State[Long, R]): R = {
+  def rec(x: Int): R = {
     sum.get { s0 =>
       val s = s0 + x
       sum.put(s, _ => {
@@ -21,12 +22,14 @@ inline def program(sum: State[Long, (Int, Long)]): (Int, Long) = {
   rec(10)
 }
 
-def runProgram(other: State[?, (Int, Long)], sum: State[Long, (Int, Long)]) = {
+def runProgram(other: State[?, R], sum: State[Long, R]) = {
   run(other, sum)((_, s) => program(s))
 }
 
-
-// Removing inline
+// Removing the recursive call
+// Changing R to a non-tuple
+// Removing R as a parameter to State and hardcoding `(Int, Long)`
+// Removing inline from `def program`
 // Removing ^{resume} from the return type of State.put
-// Using this definition
-  // def run2[S1 <: State[?, R], S2 <: State[?, R], R](s1: S1, s2: S2)(prog: S2 => R): R = prog(s2)
+// Replacing `def run` with
+  // `def run[S1 <: State[?, R], S2 <: State[?, R]](s1: S1, s2: S2)(prog: S2 => R): R = prog(s2)`
