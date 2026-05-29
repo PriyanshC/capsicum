@@ -19,23 +19,15 @@ object StateOp {
 }
 
 // Prog
-object Sumh {
-  inline def program(using count: State[Int, (Int, Long)], sum: State[Long, (Int, Long)]): (Int, Long) = {
-    def rec: (Int, Long) = {
-      count.get { s =>
-        count.update(_ + 1, { _ =>
-          sum.update(_ + s.toLong, {_ =>
-            if s < 100 then rec else count.get((_, s))
-          })
-        })
-      }
-    }
-    rec
-  }
+inline def program(using sum: State[Long, (Int, Long)]): (Int, Long) = {
+  def rec(s: Int): (Int, Long) = sum.update(_ + s, {_ =>
+    if s > 0 then rec(s - 1) else (0, 0)
+  })
+  rec(10)
+}
 
-  def runProg(count: State[Int, (Int, Long)], sum: State[Long, (Int, Long)]) = {
-    run(count, sum) { (c, s) ?=> 
-      program(using c, s)
-    }
+def runProg(count: State[Int, (Int, Long)], sum: State[Long, (Int, Long)]) = {
+  run(count, sum) { (c, s) ?=> 
+    program(using s)
   }
 }
