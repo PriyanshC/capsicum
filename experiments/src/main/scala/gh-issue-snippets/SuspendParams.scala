@@ -2,12 +2,6 @@ package experiments.issues.suspendparams
 
 import language.experimental.captureChecking
 
-// Bounce
-class Bounce[A]
-
-def suspend[A, C^, D^](x: ->{C} Bounce[A]^{D}): Bounce[A]^{C, D} = ???
-inline def result[A](x: A): Bounce[A] = ???
-
 // State
 sealed trait State[S, R] {
   def perform[V](eff: StateOp[S, V], resume: V => R): R^{resume}
@@ -26,12 +20,12 @@ object StateOp {
 
 // Prog
 object Sumh {
-  inline def program(using count: State[Int, Bounce[(Int, Long)]], sum: State[Long, Bounce[(Int, Long)]]): Bounce[(Int, Long)] = {
-    def rec: Bounce[(Int, Long)] = {
+  inline def program(using count: State[Int, (Int, Long)], sum: State[Long, (Int, Long)]): (Int, Long) = {
+    def rec: (Int, Long) = {
       count.get { s =>
         count.update(_ + 1, { _ =>
           sum.update(_ + s.toLong, {_ =>
-            if s < 100 then suspend(rec) else count.get(c => result((c, s)))
+            if s < 100 then rec else count.get((_, s))
           })
         })
       }
@@ -39,7 +33,7 @@ object Sumh {
     rec
   }
 
-  def runProg(count: State[Int, Bounce[(Int, Long)]], sum: State[Long, Bounce[(Int, Long)]]) = {
+  def runProg(count: State[Int, (Int, Long)], sum: State[Long, (Int, Long)]) = {
     run(count, sum) { (c, s) ?=> 
       program(using c, s)
     }
