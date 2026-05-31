@@ -48,9 +48,15 @@ abstract class StateFnLaws[S: Arbitrary](newState: =>StateCapability[S, S => S])
   }
 }
 
-
+def mkRWState[S: Arbitrary](s: S): StateCapability[S, Boolean] = {
+    val state = new MutableStateHandler[S, Boolean](s)
+    val r = state.asReader
+    val w = state.asWriter
+    new RWStateHandler(r, w)
+}
 abstract class MutStateLaws[S: Arbitrary] extends StateLaws[S](new MutableStateHandler(_))
 abstract class PurerStateLaws[S: Arbitrary] extends StateFnLaws[S](new PurerStateCapability)
+abstract class RWStateLaws[S: Arbitrary] extends StateLaws[S](mkRWState(_))
 
 object MutIntStateSpec extends MutStateLaws[Int]
 object MutStringStateSpec extends MutStateLaws[String]
@@ -59,3 +65,7 @@ object MutListStateSpec extends MutStateLaws[List[Double]]
 object PureIntStateSpec extends PurerStateLaws[Int]
 object PureStringStateSpec extends PurerStateLaws[String]
 object PureListStateSpec extends PurerStateLaws[List[Double]]
+
+object RWIntStateSpec extends RWStateLaws[Int]
+object RWStringStateSpec extends RWStateLaws[String]
+object RWListStateSpec extends RWStateLaws[List[Double]]
