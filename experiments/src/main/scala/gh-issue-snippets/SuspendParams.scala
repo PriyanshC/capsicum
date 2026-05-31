@@ -23,7 +23,7 @@ inline def program(sum: State[Long, R]): R = {
 }
 
 def runProgram(other: State[?, R], sum: State[Long, R]) = {
-  run(other, sum)((_, s) => program(s))
+  // run(other, sum)((_, s) => program(s))
 }
 
 // Removing the recursive call
