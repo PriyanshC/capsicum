@@ -10,7 +10,7 @@ ThisBuild / scalacOptions ++= {
 lazy val root = (project in file("."))
   .settings(
     name := "capsicum",
-    libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.17.0" % Test
+    libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.19.0" % Test
   )
 
 val kyoVersion = "1.0-RC1"
