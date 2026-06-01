@@ -21,14 +21,14 @@ object Database {
 }
 
 object DatabaseExample {
-  def fetchAllNames(ids: Iterable[Int]): Iterable[String] = {
+  def processIds[R](ids: Iterable[Int], process: Iterable[String] => R): R = {
     Database.withConnection { db =>
-      ids.map(db.fetchName(_))
+      process(ids.map(db.fetchName(_)))
     }
   }
 
   @main def runDatabaseExample(): Unit = {
-    val names = fetchAllNames(LazyList(2, 5, 10))
+    val names = processIds(LazyList(2, 5, 10), identity)
     println(scala.util.Try(names.toList))
   }
 }

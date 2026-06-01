@@ -17,3 +17,17 @@ object DatabaseTracked {
     result
   }
 }
+
+
+object DatabaseExample {
+  def processIds[R](ids: Iterable[Int], process: Iterable[String]^ => R): R^ = {
+    DatabaseTracked.withConnection { db =>
+      process(ids.map(db.fetchName(_)))
+    }
+  }
+
+  @main def runDatabaseTrackedExample(): Unit = {
+    val names = processIds(LazyList(2, 5, 10), xs => xs.toList) // Force evaluation whilst active
+    println(scala.util.Try(names.toList))
+  }
+}
