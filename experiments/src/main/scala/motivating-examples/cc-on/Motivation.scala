@@ -23,7 +23,7 @@ object DatabaseTracked {
 object DatabaseExample {
   def processIds[R](ids: Iterable[Int], process: Iterable[String]^ => R): R^ = {
     DatabaseTracked.withConnection { db =>
-      process(ids.map(db.fetchName(_)))
+      process(ids.map(db.fetchName))
     }
   }
 
