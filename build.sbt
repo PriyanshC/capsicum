@@ -22,6 +22,7 @@ lazy val experiments = (project in file("experiments"))
       "io.github.marcinzh" %% "turbolift-core" % "0.124.0",
       "io.github.marcinzh" %% "beam-core" % "0.20.0",
       "io.getkyo" %% "kyo-prelude" % kyoVersion,
-      "io.getkyo" %% "kyo-core"    % kyoVersion
+      "io.getkyo" %% "kyo-core"    % kyoVersion,
+      "org.typelevel" %% "cats-core" % "2.13.0",
     )
   )
