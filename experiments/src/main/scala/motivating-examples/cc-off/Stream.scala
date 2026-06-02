@@ -18,7 +18,7 @@ class Mapper[A, B](f: A => B)(out: Stream[B]) extends Stream[A] {
 object VanillaScopedLeak {
   @main def runVanillaScopedLeak(): Unit = {
     val myStream: Stream[Int] = Database.withConnection { db =>
-        new Mapper[Int, String](db.fetchName(_))(Printer)
+        new Mapper[Int, String](db.fetchName)(Printer)
     }
 
     myStream.emit(5)
@@ -29,8 +29,8 @@ object VanillaLazyLeak {
   @main def runVanillaLazyLeak(): Unit = {
     val data = LazyList(2, 5, 10)
     val result = Database.withConnection { db =>
-      val myStream = new Mapper[Int, String](db.fetchName(_))(Printer)
-      data.map(myStream.emit(_))
+      val myStream = new Mapper[Int, String](db.fetchName)(Printer)
+      data.map(myStream.emit)
     }
 
     println(scala.util.Try(result.toList))
