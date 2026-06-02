@@ -1,6 +1,7 @@
 package experiments.motivation.ccoff.monadic
 
 import experiments.motivation.ccoff._
+import scala.util.Try
 
 case class DB[A](run: Database => A) {
   def map[B](f: A => B): DB[B] = DB(db => f(run(db)))
@@ -25,6 +26,7 @@ object DB {
 
   @main def runDatabaseM() = {
     val fetchMyNames = DB.runTransactionM(deferFetchAllM(LazyList(1, 5, 10)))
-    val names = fetchMyNames() 
+    val names = fetchMyNames()
+    println(Try(names.toList))
   }
 }
