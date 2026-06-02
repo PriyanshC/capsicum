@@ -6,12 +6,13 @@ import scala.language.experimental.captureChecking
 export experiments.motivation.ccoff.Database
 
 object DatabaseTracked {
-  def withConnection[R](exc: Database^ => R): R^ = {
-    val db: Database^ = new Database {
+  def openConnection(): Database = new Database {
       private var isClosed = false
       override def fetchName(id: Int): String = if (isClosed) throw new RuntimeException("Connection closed!") else s"id-${id}"
       override def close(): Unit = isClosed = true
     }
+  def withConnection[R](exc: Database^ => R): R^ = {
+    val db: Database^ = Database.openConnection()
     val result: R^{db} = exc(db)
     db.close()
     result

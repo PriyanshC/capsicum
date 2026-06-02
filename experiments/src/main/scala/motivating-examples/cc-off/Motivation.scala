@@ -8,12 +8,13 @@ trait Database {
 
 // We can open/close connections automatically a try-with-resources like pattern
 object Database {
-  def withConnection[R](exc: Database => R): R = {
-    val db = new Database {
+  def openConnection(): Database = new Database {
       private var isClosed = false
       override def fetchName(id: Int): String = if (isClosed) throw new RuntimeException("Connection closed!") else s"id-${id}"
       override def close(): Unit = isClosed = true
     }
+  def withConnection[R](exc: Database => R): R = {
+    val db = Database.openConnection()
     val result = exc(db)
     db.close()
     result
