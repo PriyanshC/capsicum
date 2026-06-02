@@ -30,3 +30,33 @@ object DB {
     println(Try(names.toList))
   }
 }
+
+object WithCats {
+  import cats.data.Reader
+
+  object DB {
+    type DB[A] = Reader[Database, A]
+
+    def fetchNameM(id: Int): DB[String] = 
+      Reader(db => db.fetchName(id))
+
+    def runTransactionM[A](action: DB[A]): A = {
+      val db = Database.openConnection()
+      val result = action.run(db)
+      db.close()
+      result
+    }
+
+    def deferFetchAllM(ids: Iterable[Int]): DB[() => Iterable[String]] = {
+      Reader { db =>
+        () => ids.map(db.fetchName)
+      }
+    }
+
+    @main def runDatabaseMCats(): Unit = {
+      val fetchMyNames = DB.runTransactionM(deferFetchAllM(LazyList(1, 5, 10)))
+      val names = fetchMyNames()
+      println(Try(names.toList))
+    }
+  }
+}
