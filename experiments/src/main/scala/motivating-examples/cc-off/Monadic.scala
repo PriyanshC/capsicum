@@ -53,7 +53,7 @@ object WithCats {
       }
     }
 
-    @main def runDatabaseMKitty(): Unit = {
+    @main def runDatabaseMCats(): Unit = {
       val fetchMyNames = DB.runTransactionM(deferFetchAllM(LazyList(1, 5, 10)))
       val names = fetchMyNames()
       println(Try(names.toList))
