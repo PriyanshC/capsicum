@@ -4,7 +4,7 @@ import experiments.motivation.ccon._
 import scala.language.experimental.captureChecking
 import scala.util.Try
 
-case class DB[A](run: Database => A) {
+case class DB[A](run: Database^ => A) {
   def map[B](f: A => B): DB[B]^ = DB(db => f(run(db)))
   def flatMap[B](f: A => DB[B]): DB[B]^ = DB(db => f(run(db)).run(db))
 }
@@ -13,7 +13,7 @@ object DB {
   def fetchNameM(id: Int): DB[String] = DB(db => db.fetchName(id))
 
   def runTransactionM[A](action: DB[A]): A = {
-    val db = Database.openConnection()
+    val db: Database^ = Database.openConnection()
     val result = action.run(db)
     db.close()
     result
@@ -21,7 +21,8 @@ object DB {
 
   def deferFetchAllM(ids: Iterable[Int]): DB[() -> Iterable[String]] = {
     DB { db =>
-      () => ids.map(db.fetchName) 
+      // () => ids.map(db.fetchName)
+      ???
     }
   }
 
