@@ -9,7 +9,7 @@ case class Tell[T](t: T) extends WriterEff[T, Unit]
 type Writer[T] = [V] =>> WriterEff[T, V]
 
 trait WriterCapability[T, P, R] extends Capability[Writer[T], P, R] {
-  final inline def tell(t: T, inline resume: Unit => P): R = perform(Tell(t), resume)
+  final inline def tell(t: T)(inline resume: Unit => P): R = perform(Tell(t), resume)
 }
 
 class LogWriter[T, R] extends WriterCapability[T, R, R] {

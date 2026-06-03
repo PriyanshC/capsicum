@@ -33,7 +33,7 @@ trait StatefulCapability[S, R] extends StateCapability[S, R] {
 class RWStateHandler[S, R](r: ReaderCapability[S, R, R], w: WriterCapability[S, R, R]) extends StateCapability[S, R] {
   override def perform[V](eff: StateEff[S, V], resume: V => R): R = eff match
     case StateOp.Get() => r.ask(resume)
-    case StateOp.Put(value) => w.tell(value, resume)
+    case StateOp.Put(value) => w.tell(value)(resume)
 }
 
 class MutableStateHandler[S, R](private [effects] var state: S) extends StatefulCapability[S, R] with DirectCap[[V] =>> StateEff[S, V], R] {
