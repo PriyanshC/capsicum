@@ -11,36 +11,39 @@ object Cdown {
 
 object MutableEntry {
   inline def program(using state: StateCapability[Int]) = {
-    def rec: Bounce[Int] = {
+    @scala.annotation.tailrec def rec: Int = {
       val s = state.get()
-      if s <= 0 then result(s) else {
+      if s <= 0 then (s) else {
         state.put(s - 1)
-        suspend(rec)
+        rec
       }
     }
     rec
   }
 
   def round1 = {
-    State.runMutSafe(Cdown.LIMIT)(program)
+    State.runMut(Cdown.LIMIT)(program)
   }
 }
 
-// object PureEntry {
-//   inline def program(using state: SafePureStateCapability[Int, Int]): Int -> Bounce[(Int, Int)] = {
-//     def rec: Int -> Bounce[(Int, Int)] = {
-//       state.get { s =>
-//         if (s <= 0) then 
-//           ((x: Int) => result((x, s))) 
-//         else 
-//           state.put(s - 1)(_ => rec)
-//       }
-//     }
-//     rec
-//   }
+object PureEntry {
+  inline def program(using state: MultiShotStateCapability[Int, Bounce[(Int, Int)]]): Int -> Bounce[(Int, Int)] = {
+    def rec: Int -> Bounce[(Int, Int)] = {
+      state.get { s =>
+        if (s <= 0) then x => result((x, s)) else state.put(s - 1)(_ => rec)
+      }
+    //   state.get { s =>
+    //     if (s <= 0) then 
+    //       ((x: Int) => ((x, s))) 
+    //     else 
+    //       state.put(s - 1)(???)
+    //   }
+    }
+    rec
+  }
 
-//   def round1 = {
-//     val (finalState, res) = State.runPureSafe(10000)(program)
-//     res
-//   }
-// }
+  def round1 = {
+    val (finalState, res) = State.runPureSafe(Sumh.LIMIT)(program)
+    res
+  }
+}

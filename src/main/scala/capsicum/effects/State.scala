@@ -48,31 +48,22 @@ class MutableStateHandler[S](private [effects] var state: S) extends StatefulCap
   }
 }
 
-class PureStateCapability[S, A] extends MultiShotCapability[State[S], S -> (S, A), S -> (S, A)] {
-  final inline def get()(resume: S => S -> (S, A)): S ->{resume} (S, A) = perform(StateOp.Get())(resume)
-  final inline def put(newState: S)(resume: Unit => S -> (S, A)): S ->{resume} (S, A) = perform(StateOp.Put(newState))(resume)
+trait MultiShotStateCapability[S, R] extends MultiShotCapability[State[S], S -> R, S -> R] {
+  final inline def get(resume: S => S -> R): S ->{resume} R = perform(StateOp.Get())(resume)
+  final inline def put(newState: S)(resume: Unit => S -> R): S ->{resume} R = perform(StateOp.Put(newState))(resume)
+}
+
+class PureStateCapability[S, A] extends MultiShotStateCapability[S, (S, A)] {
   override def perform[V](eff: StateEff[S, V])(resume: V => (S ->{this} (S, A))): S ->{resume} (S, A) = eff match {
     case StateOp.Get() => (currentState: S) => resume(currentState)(currentState)
     case StateOp.Put(newState) => (_: S) => resume(())(newState)
   }
 }
 
-class PurerStateCapability[S] extends MultiShotCapability[State[S], S -> S, S -> S] {
-  final inline def get()(resume: S => S -> S): S ->{resume} S = perform(StateOp.Get())(resume)
-  final inline def put(newState: S)(resume: Unit => S -> S): S ->{resume} S = perform(StateOp.Put(newState))(resume)
+class PurerStateCapability[S] extends MultiShotStateCapability[S, S] {
   override def perform[V](eff: StateEff[S, V])(resume: V => (S ->{this} S)): S ->{resume} S = eff match {
     case StateOp.Get() => (currentState: S) => resume(currentState)(currentState)
     case StateOp.Put(newState) => (_: S) => resume(())(newState)
-  }
-}
-
-class SafePureStateCapability[S, A] extends MultiShotCapability[State[S], S -> Bounce[(S, A)], S -> Bounce[(S, A)]] {
-  override def perform[V](eff: StateEff[S, V])(resume: V => S ->{this} Bounce[(S, A)]): S ->{resume} Bounce[(S, A)] = {
-    val r = eff match {
-      case StateOp.Get() => (currentState: S) => suspend(resume(currentState)(currentState))
-      case StateOp.Put(newState) => ((_: S) => suspend(resume(())(newState)))
-    }
-    r.asInstanceOf[S ->{resume} Bounce[(S, A)]]
   }
 }
 
