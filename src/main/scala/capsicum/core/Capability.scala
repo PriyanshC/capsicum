@@ -19,18 +19,18 @@ trait MultiShotCapability[-E <: Effect, -P, R] extends BaseCapability {
   def perform[V](eff: E[V])(resume: V => P): R^{resume}
 }
 
-private sealed trait NullaryEff[-V, V0] extends Effect[V0]
-case class Parameterless[V]() extends NullaryEff[V, V]
+// private sealed trait NullaryEff[-V, V0] extends Effect[V0]
+// case class Parameterless[V]() extends NullaryEff[V, V]
 
-type Nullary[-V] = [X] =>> NullaryEff[V, X]
+// type Nullary[-V] = [X] =>> NullaryEff[V, X]
 
-trait NullaryCap[+V, -P, +R] {
-  this: MultiShotCapability[Nullary[V], P, R]^ =>
-  def perform(resume: V => P): R
-  final override inline def perform[V0](inline eff: NullaryEff[V, V0], inline resume: V0 => P): R = inline eff match {
-    case Parameterless() => perform(resume)
-  }
-}
+// trait NullaryCap[+V, -P, +R] {
+//   this: MultiShotCapability[Nullary[V], P, R]^ =>
+//   def perform(resume: V => P): R
+//   final override inline def perform[V0](inline eff: NullaryEff[V, V0], inline resume: V0 => P): R = inline eff match {
+//     case Parameterless() => perform(resume)
+//   }
+// }
 
 trait MonadicCap[-E <: Effect, -P, +R] {
   this: MultiShotCapability[E, P, R] =>
