@@ -39,7 +39,7 @@ trait MonadicCap[-E <: Effect, -P, +R] {
   def mperform[V](eff: E[V]): (V => P) => R
 }
 
-def run[K1 <: MultiShotCapability[?, ?, R], K2 <: MultiShotCapability[?, ?, R], R](
+def run[K1 <: BaseCapability, K2 <: BaseCapability, R](
 k1: K1, k2: K2
 )(prog: (K1, K2) ?-> R): R = {
   k1.run {
@@ -49,7 +49,7 @@ k1: K1, k2: K2
   }
 }
 
-def run[K1 <: MultiShotCapability[?, ?, R], K2 <: MultiShotCapability[?, ?, R], K3 <: MultiShotCapability[?, ?, R], R](
+def run[K1 <: BaseCapability, K2 <: BaseCapability, K3 <: BaseCapability, R](
 k1: K1, k2: K2, k3: K3
 )(prog: (K1, K2, K3) ?-> R): R = {
   k1.run {
@@ -61,7 +61,7 @@ k1: K1, k2: K2, k3: K3
   }
 }
 
-def run[K1 <: MultiShotCapability[?, ?, R], K2 <: MultiShotCapability[?, ?, R], K3 <: MultiShotCapability[?, ?, R], K4 <: MultiShotCapability[?, ?, R], R](
+def run[K1 <: BaseCapability, K2 <: BaseCapability, K3 <: BaseCapability, K4 <: BaseCapability, R](
 k1: K1, k2: K2, k3: K3, k4: K4
 )(prog: (K1, K2, K3, K4) ?-> R): R = {
   k1.run {
@@ -75,7 +75,7 @@ k1: K1, k2: K2, k3: K3, k4: K4
   }
 }
 
-def run[K1 <: MultiShotCapability[?, ?, R], K2 <: MultiShotCapability[?, ?, R], K3 <: MultiShotCapability[?, ?, R], K4 <: MultiShotCapability[?, ?, R], K5 <: MultiShotCapability[?, ?, R], R](
+def run[K1 <: BaseCapability, K2 <: BaseCapability, K3 <: BaseCapability, K4 <: BaseCapability, K5 <: BaseCapability, R](
 k1: K1, k2: K2, k3: K3, k4: K4, k5: K5
 )(prog: (K1, K2, K3, K4, K5) ?-> R): R = {
   k1.run {
