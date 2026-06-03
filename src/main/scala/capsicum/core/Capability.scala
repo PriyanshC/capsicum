@@ -35,7 +35,7 @@ trait MultiShotCapability[-E <: Effect, -P, R] extends BaseCapability {
 trait MonadicCap[-E <: Effect, -P, +R] {
   this: MultiShotCapability[E, P, R] =>
   
-  final override inline def perform[V](inline eff: E[V], inline resume: V => P): R = mperform(eff)(resume)
+  final override inline def perform[V](inline eff: E[V])(inline resume: V => P): R = mperform(eff)(resume)
   def mperform[V](eff: E[V]): (V => P) => R
 }
 
