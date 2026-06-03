@@ -13,6 +13,13 @@ sealed trait BaseCapability extends caps.SharedCapability {
 
 trait OneShotCapability[-E <: Effect] extends BaseCapability {
   def perform[V](eff: E[V]): V
+
+  final def asMultiShot[R]: MultiShotCapability[E, R, R] = {
+    val oneshot = this
+    new MultiShotCapability {
+      override def perform[V](eff: E[V])(resume: V => R): R = resume(oneshot.perform(eff))
+    }
+  }
 }
 
 trait MultiShotCapability[-E <: Effect, -P, R] extends BaseCapability {
