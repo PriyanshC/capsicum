@@ -9,7 +9,7 @@ object ProduceOp {
   case class GetValue[A]() extends ProduceOp[A, A]
 }
 
-trait ProducerCapability[A, R] extends Capability[[V] =>> ProduceOp[A, V], R, R] {
+trait ProducerCapability[A, R] extends MultiShotCapability[[V] =>> ProduceOp[A, V], R, R] {
   final def produce(resume: A -> R): R = perform(ProduceOp.GetValue(), resume)
 }
 
@@ -97,21 +97,20 @@ lazy object PoisonState {
 
   val fs: FileSystem^ = new FileSystem
   val logger: Logger^{fs} = new Logger(fs)
-  val handler: StateCapability[Logger^{fs}, Unit] = new MutableStateHandler(logger)
+  val handler: StateCapability[Logger^{fs}] = new MutableStateHandler(logger)
 
-  def naughtyProgram[C^](using state: StateCapability[Logger^{C}, Unit]): Unit = {
-    state.get{ (logger: Logger^{C}) =>
-      logger.log("Hi from polymorphic state")
-      
-      val newFs: FileSystem^ = new FileSystem
-      val newLogger: Logger^{newFs} = new Logger(newFs)
+  def naughtyProgram[C^](using state: StateCapability[Logger^{C}]): Unit = {
+    val logger: Logger^{C} = state.get()
+    logger.log("Hi from polymorphic state")
+    
+    val newFs: FileSystem^ = new FileSystem
+    val newLogger: Logger^{newFs} = new Logger(newFs)
 
-      /* ERROR:
-      Found:    Logger^{newLogger}
-      Required: Logger^{C}
-      Note that capability `newLogger` cannot flow into capture set {C}.
-      */
-      // state.put(newLogger,  _ => println("Logger updated!"))
-    }
+    /* ERROR:
+    Found:    Logger^{newLogger}
+    Required: Logger^{C}
+    Note that capability `newLogger` cannot flow into capture set {C}.
+    */
+    // state.put(newLogger)
   }
 }

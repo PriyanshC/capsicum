@@ -24,13 +24,14 @@ object Fiber {
   }
 }
 
-trait AsyncCapability[R] extends Capability[AsyncEff, R, R] {
-  final inline def fork[T](inline task: () => T)(inline resume: Fiber[T] => R): R = perform(AsyncOp.Fork(task), resume)
-  final inline def join[T](inline fiber: Fiber[T])(inline resume: T => R): R = perform(AsyncOp.Join(fiber), resume)
+trait AsyncCapability[R] extends OneShotCapability[AsyncEff] {
+  final inline def fork[T](inline task: () => T): Fiber[T] = perform(AsyncOp.Fork(task))
+  final inline def join[T](inline fiber: Fiber[T]): T = perform(AsyncOp.Join(fiber))
 }
 
 class VirtualAsyncHandler[R](using ec: ExecutionContext) extends AsyncCapability[R] {
-  override def perform[V](eff: AsyncEff[V], resume: V => R): R = eff match
+
+  override def perform[V](eff: AsyncEff[V]): V = eff match
     case f: AsyncOp.Fork[t] => {
       val promise = Promise[t]()
       
@@ -42,8 +43,7 @@ class VirtualAsyncHandler[R](using ec: ExecutionContext) extends AsyncCapability
         }
       })
       
-      val fiber = Fiber(promise.future)
-      resume(fiber)
+      Fiber(promise.future)
     }
-    case AsyncOp.Join(fiber) => resume(fiber.get())
+    case AsyncOp.Join(fiber) => fiber.get()
 }

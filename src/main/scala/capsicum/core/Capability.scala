@@ -7,31 +7,16 @@ import language.experimental.captureChecking
 */
 trait Effect[V]
 
-/**
-* Base trait for capabilities that can perform effects.
-* @tparam E the effect type
-* @tparam P the parameter type for the result of resumption
-* @tparam R the final return type
-*/
-sealed trait BaseCapability[-E <: Effect, -P, R] {
-  def perform[V](eff: E[V], resume: V => P): R^{resume}
-  final inline def run(inline prog: this.type ?=> R): R = prog(using this)
+sealed trait BaseCapability extends caps.SharedCapability {
+  final inline def run[R](inline prog: this.type ?=> R): R = prog(using this)
 }
 
-trait Capability[-E <: Effect, -P, R] extends BaseCapability[E, P, R] with caps.SharedCapability
-trait UniqueCapability[-E <: Effect, -P, R] extends BaseCapability[E, P, R] with caps.ExclusiveCapability
+trait OneShotCapability[-E <: Effect] extends BaseCapability {
+  def perform[V](eff: E[V]): V
+}
 
-/**
- * Type alias for a capability where the resumption's return and final return types are the same.
- * @tparam E the effect type
- * @tparam R the uniform type
- */
-type MonoCapability[-E <: Effect, R] = Capability[E, R, R]
-
-trait DirectCap[-E <: Effect, R] {
-  this: MonoCapability[E, R]^ =>
-    protected def apply[V](eff: E[V]): V
-    final override def perform[V](eff: E[V], resume: V => R): R = resume(apply(eff))
+trait MultiShotCapability[-E <: Effect, -P, R] extends BaseCapability {
+  def perform[V](eff: E[V], resume: V => P): R^{resume}
 }
 
 private sealed trait NullaryEff[-V, V0] extends Effect[V0]
@@ -40,28 +25,21 @@ case class Parameterless[V]() extends NullaryEff[V, V]
 type Nullary[-V] = [X] =>> NullaryEff[V, X]
 
 trait NullaryCap[+V, -P, +R] {
-  this: BaseCapability[Nullary[V], P, R]^ =>
+  this: MultiShotCapability[Nullary[V], P, R]^ =>
   def perform(resume: V => P): R
   final override inline def perform[V0](inline eff: NullaryEff[V, V0], inline resume: V0 => P): R = inline eff match {
     case Parameterless() => perform(resume)
   }
 }
 
-trait DirectNullaryCap[+V, R] {
-  this: MonoCapability[Nullary[V], R]^ =>
-  protected def apply(): V
-  final override inline def perform[V0](inline eff: NullaryEff[V, V0], inline resume: V0 => R): R = inline eff match
-    case Parameterless() => resume(apply())
-}
-
 trait MonadicCap[-E <: Effect, -P, +R] {
-  this: BaseCapability[E, P, R] =>
+  this: MultiShotCapability[E, P, R] =>
   
   final override inline def perform[V](inline eff: E[V], inline resume: V => P): R = mperform(eff)(resume)
   def mperform[V](eff: E[V]): (V => P) => R
 }
 
-def run[K1 <: BaseCapability[?, ?, R], K2 <: BaseCapability[?, ?, R], R](
+def run[K1 <: MultiShotCapability[?, ?, R], K2 <: MultiShotCapability[?, ?, R], R](
 k1: K1, k2: K2
 )(prog: (K1, K2) ?-> R): R = {
   k1.run {
@@ -71,7 +49,7 @@ k1: K1, k2: K2
   }
 }
 
-def run[K1 <: BaseCapability[?, ?, R], K2 <: BaseCapability[?, ?, R], K3 <: BaseCapability[?, ?, R], R](
+def run[K1 <: MultiShotCapability[?, ?, R], K2 <: MultiShotCapability[?, ?, R], K3 <: MultiShotCapability[?, ?, R], R](
 k1: K1, k2: K2, k3: K3
 )(prog: (K1, K2, K3) ?-> R): R = {
   k1.run {
@@ -83,7 +61,7 @@ k1: K1, k2: K2, k3: K3
   }
 }
 
-def run[K1 <: BaseCapability[?, ?, R], K2 <: BaseCapability[?, ?, R], K3 <: BaseCapability[?, ?, R], K4 <: BaseCapability[?, ?, R], R](
+def run[K1 <: MultiShotCapability[?, ?, R], K2 <: MultiShotCapability[?, ?, R], K3 <: MultiShotCapability[?, ?, R], K4 <: MultiShotCapability[?, ?, R], R](
 k1: K1, k2: K2, k3: K3, k4: K4
 )(prog: (K1, K2, K3, K4) ?-> R): R = {
   k1.run {
@@ -97,7 +75,7 @@ k1: K1, k2: K2, k3: K3, k4: K4
   }
 }
 
-def run[K1 <: BaseCapability[?, ?, R], K2 <: BaseCapability[?, ?, R], K3 <: BaseCapability[?, ?, R], K4 <: BaseCapability[?, ?, R], K5 <: BaseCapability[?, ?, R], R](
+def run[K1 <: MultiShotCapability[?, ?, R], K2 <: MultiShotCapability[?, ?, R], K3 <: MultiShotCapability[?, ?, R], K4 <: MultiShotCapability[?, ?, R], K5 <: MultiShotCapability[?, ?, R], R](
 k1: K1, k2: K2, k3: K3, k4: K4, k5: K5
 )(prog: (K1, K2, K3, K4, K5) ?-> R): R = {
   k1.run {
