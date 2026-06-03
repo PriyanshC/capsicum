@@ -27,17 +27,11 @@ object MutableEntry {
 }
 
 object PureEntry {
-  inline def program(using state: MultiShotStateCapability[Int, Bounce[(Int, Int)]]): Int -> Bounce[(Int, Int)] = {
-    def rec: Int -> Bounce[(Int, Int)] = {
+  inline def program(using state: MultiShotStateCapability[Int, Bounce[(Int, Int)]]): Int => Bounce[(Int, Int)] = {
+    def rec: Int => Bounce[(Int, Int)] = {
       state.get { s =>
         if (s <= 0) then x => result((x, s)) else state.put(s - 1)(_ => rec)
       }
-    //   state.get { s =>
-    //     if (s <= 0) then 
-    //       ((x: Int) => ((x, s))) 
-    //     else 
-    //       state.put(s - 1)(???)
-    //   }
     }
     rec
   }
