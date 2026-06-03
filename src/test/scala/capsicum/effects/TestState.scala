@@ -15,12 +15,12 @@ abstract class StateLaws[S: Arbitrary : ClassTag, K <: StateCapability[S, Boolea
 
   property("Put-Get") = forAll { (initial: S, value: S) =>
     val state = newState(initial)
-    state.put(value, _ => state.get(_ == value))
+    state.put(value)(_ => state.get(_ == value))
   }
 
   property("Put-Put-Get") = forAll { (initial: S, val1: S, val2: S) =>
     val state = newState(initial)
-    state.put(val1, _ => state.put(val2, _ => state.get(_ == val2)))
+    state.put(val1)(_ => state.put(val2)(_ => state.get(_ == val2)))
   }
 }
 
@@ -35,14 +35,14 @@ abstract class StateFnLaws[S: Arbitrary](newState: =>StateCapability[S, S => S])
 
   property("Put-Get") = forAll { (initial: S, value: S) =>
     val state = newState
-    val stateFn = state.put(value, _ => state.get(_ => identity))
+    val stateFn = state.put(value)(_ => state.get(_ => identity))
     val finalState = stateFn(initial)
     finalState == value
   }
   
   property("Put-Put-Get") = forAll { (initial: S, val1: S, val2: S) =>
     val state = newState
-    val stateFn = state.put(val1, _ => state.put(val2, _ => state.get(_ => identity)))
+    val stateFn = state.put(val1)(_ => state.put(val2)(_ => state.get(_ => identity)))
     val finalState = stateFn(initial)
     finalState == val2
   }

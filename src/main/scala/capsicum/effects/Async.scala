@@ -25,8 +25,8 @@ object Fiber {
 }
 
 trait AsyncCapability[R] extends Capability[AsyncEff, R, R] {
-  final inline def fork[T](inline task: () => T, inline resume: Fiber[T] => R): R = perform(AsyncOp.Fork(task), resume)
-  final inline def join[T](inline fiber: Fiber[T], inline resume: T => R): R = perform(AsyncOp.Join(fiber), resume)
+  final inline def fork[T](inline task: () => T)(inline resume: Fiber[T] => R): R = perform(AsyncOp.Fork(task), resume)
+  final inline def join[T](inline fiber: Fiber[T])(inline resume: T => R): R = perform(AsyncOp.Join(fiber), resume)
 }
 
 class VirtualAsyncHandler[R](using ec: ExecutionContext) extends AsyncCapability[R] {

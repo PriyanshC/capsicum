@@ -13,7 +13,7 @@ object MutableEntry {
   inline def program(using state: StateCapability[Int, Bounce[Int]]) = {
     def rec: Bounce[Int] = {
       state.get { s =>
-        if (s <= 0) then result(s) else state.put(s - 1, _ => suspend(rec))
+        if (s <= 0) then result(s) else state.put(s - 1)(_ => suspend(rec))
       }
     }
     rec
@@ -31,7 +31,7 @@ object PureEntry {
         if (s <= 0) then 
           ((x: Int) => result((x, s))) 
         else 
-          state.put(s - 1, _ => rec)
+          state.put(s - 1)(_ => rec)
       }
     }
     rec
