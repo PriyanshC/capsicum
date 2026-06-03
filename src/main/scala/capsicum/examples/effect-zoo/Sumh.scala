@@ -20,6 +20,7 @@ object Sumh {
   def round1 = {
     val state = new MutableStateHandler[Int](0)
     val sum = new MutableStateHandler[Long](0L)
-    State.runMut(0L)(State.runMut(0)(program(Sumh.LIMIT)))
+    val (finalSum, (finalState, result)) = State.runMut(0L)(State.runMut(0)(program(Sumh.LIMIT)))
+    (result, finalSum, finalState)
   }
 }
