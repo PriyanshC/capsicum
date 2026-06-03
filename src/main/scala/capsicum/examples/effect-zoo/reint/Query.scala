@@ -20,3 +20,12 @@ class ToLoggedHttpHandler[R](using http: HttpCapability[R], logging: LoggingCapa
       }
   }
 }
+
+class ToLoggedHttpHandlerM[R](using http: HttpCapability[R], logging: LoggingCapability[R]) extends QueryCapability[R] with MonadicCap[QueryEff, R, R] {
+  override def mperform[V](eff: QueryEff[V]): (V => R) => R = eff match {
+    case ListFruits() =>
+      for _ <- logging.logMsg("Retrieving fruits...")
+          response <- http.get("http://my-fruit-api.com")
+      yield response.split('\n').toVector
+  }
+}
