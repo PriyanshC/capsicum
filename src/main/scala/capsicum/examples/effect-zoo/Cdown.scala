@@ -37,7 +37,7 @@ object PureEntry {
   }
 
   def round1 = {
-    val (finalState, res) = State.runPureSafe(Sumh.LIMIT)(program)
+    val (finalState, res) = State.runPureSafe(Cdown.LIMIT)(program)
     res
   }
 }
