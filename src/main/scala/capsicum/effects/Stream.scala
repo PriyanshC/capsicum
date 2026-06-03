@@ -9,19 +9,19 @@ sealed trait StreamEff[+T, V] extends Effect[V]
 case class Yield[T](value: T) extends StreamEff[T, Unit]
 
 trait StreamCap[T, R] extends MonoCapability[[V] =>> StreamEff[T, V], R] {
-  final def emit(value: T, resume: Unit => R): R^{resume} = perform(Yield(value), resume)
+  final def emit(value: T)(resume: Unit => R): R^{resume} = perform(Yield(value), resume)
 }
 
 // TODO allow impure function args?
 
 class MapHandler[A, B, R](f: A -> B)(out: StreamCap[B, R]) extends StreamCap[A, R] {
   override inline def perform[V](eff: StreamEff[A, V], resume: V => R): R^{resume} = eff match
-    case Yield(a) => out.emit(f(a), resume)
+    case Yield(a) => out.emit(f(a))(resume)
 }
 
 class FilterHandler[A, R](p: A -> Boolean)(out: StreamCap[A, R]) extends StreamCap[A, R] {
   override inline def perform[V](eff: StreamEff[A, V], resume: V => R): R^{resume} = eff match
-    case Yield(a) => if (p(a)) out.emit(a, resume) else resume(())
+    case Yield(a) => if (p(a)) out.emit(a)(resume) else resume(())
 }
 
 class FoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCap[T, S] {
@@ -66,7 +66,7 @@ class BroadcastHandler[T, R, C^, D^] extends StreamCap[T, R] {
 
   override inline def perform[V](eff: StreamEff[T, V], resume: V => R): R^{resume} = eff match
     case Yield(value) => 
-      activeSubscribers.foreach(s => s.emit(value, _ => s.cont()))
+      activeSubscribers.foreach(s => s.emit(value)(_ => s.cont()))
       resume(())
 }
 
@@ -145,7 +145,7 @@ object Stream {
 
   // TODO this is the weird pattern again
   inline def fromSeq[T, R](seqq: Seq[T], resume: Unit => R)(using s: StreamCap[T, R]): R = {
-    def loop(seq: Seq[T]): R = if (seq.isEmpty) resume(()) else s.emit(seq.head, _ => loop(seq.tail))
+    def loop(seq: Seq[T]): R = if (seq.isEmpty) resume(()) else s.emit(seq.head)(_ => loop(seq.tail))
     loop(seqq)
   }
 
@@ -154,7 +154,7 @@ object Stream {
   def fromSeqSafe[T, R](seqq: Seq[T], resume: Unit => Bounce[R])(using s: StreamCap[T, Bounce[R]]): Bounce[R]^{resume, s} = {
     def loop(seq: Seq[T]): Bounce[R]^{resume, s} = {
       if (seq.isEmpty) suspend(resume(()))
-      else s.emit(seq.head, _ => suspend(loop(seq.tail)).asInstanceOf[Bounce[R]]) // TODO cast bad
+      else s.emit(seq.head)(_ => suspend(loop(seq.tail)).asInstanceOf[Bounce[R]]) // TODO cast bad
     }
     loop(seqq)
   }
