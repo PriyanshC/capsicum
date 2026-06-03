@@ -28,7 +28,7 @@ abstract class StateLaws[S: Arbitrary : ClassTag, K <: StateCapability[S]](
 }
 
 
-// abstract class StateFnLaws[S: Arbitrary](newState: =>StateCapability[S, S => S]) extends Properties(s"PureStateLaws for ${newState.getClass().getSimpleName()}") {
+// abstract class StateFnLaws[S: Arbitrary](newState: =>PurerStateCapability[S]) extends Properties(s"PureStateLaws for ${newState.getClass().getSimpleName()}") {
 //   property("Get") = forAll { (initial: S) =>
 //     val state = newState
 //     val stateFn = state.get(_ => identity)

@@ -16,7 +16,7 @@ trait OneShotCapability[-E <: Effect] extends BaseCapability {
 }
 
 trait MultiShotCapability[-E <: Effect, -P, R] extends BaseCapability {
-  def perform[V](eff: E[V], resume: V => P): R^{resume}
+  def perform[V](eff: E[V])(resume: V => P): R^{resume}
 }
 
 private sealed trait NullaryEff[-V, V0] extends Effect[V0]

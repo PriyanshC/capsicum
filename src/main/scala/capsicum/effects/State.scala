@@ -48,14 +48,20 @@ class MutableStateHandler[S](private [effects] var state: S) extends StatefulCap
   }
 }
 
-// class PureStateCapability[S, A] extends StateCapability[S -> S] {
-//   override def perform[V](eff: StateEff[S, V]): V = eff match {
-//     case StateOp.Get() => (currentState: S) => currentState
-//     case StateOp.Put(newState) => (_: S) => newState
+trait PureStateCapability[S, A] extends MultiShotCapability[State[S], S -> (S, A), S -> (S, A)] {
+  // final inline def get(inline resume: S => (S -> (S, A))): S = perform(StateOp.Get(), resume)
+  // final inline def put(inline newState: S): Unit = perform(StateOp.Put(newState))
+  // final inline def update(inline upd: S => S): Unit = put(upd(get()))
+}
+
+// class PuredStateCapability[S, A] extends MultiShotCapability[State[S], S -> (S, A), S -> (S, A)] {
+//   override def perform[V](eff: StateEff[S, V], resume: V => (S ->{this} (S, A))): S ->{resume} (S, A) = eff match {
+//     case StateOp.Get() => (currentState: S) => resume(currentState)(currentState)
+//     case StateOp.Put(newState) => (_: S) => resume(())(newState)
 //   }
 // }
 
-// class PurerStateCapability[S] extends StateCapability[S, S -> S] {
+// class PurerStateCapability[S] extends MultiShotCapability[State[S], S -> S, S -> S] {
 //   override def perform[V](eff: StateEff[S, V], resume: V => (S ->{this} S)): S ->{resume} S = eff match {
 //     case StateOp.Get() => (currentState: S) => resume(currentState)(currentState)
 //     case StateOp.Put(newState) => (_: S) => resume(())(newState)
@@ -63,8 +69,8 @@ class MutableStateHandler[S](private [effects] var state: S) extends StatefulCap
 // }
 
 
-// class SafePureStateCapability[S, A] extends StateCapability[S, S -> Bounce[(S, A)]] {
-//   override def perform[V](eff: StateEff[S, V], resume: V => (S ->{this} Bounce[(S, A)])): S ->{resume} Bounce[(S, A)] = {
+// class SafePureStateCapability[S, A] extends MultiShotCapability[State[S], S -> Bounce[(S, A)], S -> Bounce[(S, A)]] {
+//   override def perform[V](eff: StateEff[S, V], resume: V => S ->{this} Bounce[(S, A)]): S ->{resume} Bounce[(S, A)] = {
 //     val r = eff match {
 //       case StateOp.Get() => (currentState: S) => suspend(resume(currentState)(currentState))
 //       case StateOp.Put(newState) => ((_: S) => suspend(resume(())(newState)))
@@ -84,10 +90,10 @@ object State {
     val r = b.eval
     (h.state, r)
   }
-//   // pure doesn't work as well because it captures h
+  // pure doesn't work as well because it captures h
 
-//   inline def runPureSafe[S, A](inline initial: S)(inline prog: SafePureStateCapability[S, A] ?=> (S -> Bounce[(S, A)])): (S, A) = {
-//     val h = new SafePureStateCapability[S, A]
-//     h.run(prog)(initial).eval
-//   }
+  // inline def runPureSafe[S, A](inline initial: S)(inline prog: SafePureStateCapability[S, A] ?=> (S -> Bounce[(S, A)])): (S, A) = {
+  //   val h = new SafePureStateCapability[S, A]
+  //   h.run(prog)(initial).eval
+  // }
 }
