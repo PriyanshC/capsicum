@@ -48,36 +48,33 @@ class MutableStateHandler[S](private [effects] var state: S) extends StatefulCap
   }
 }
 
-trait PureStateCapability[S, A] extends MultiShotCapability[State[S], S -> (S, A), S -> (S, A)] {
-  // final inline def get(inline resume: S => (S -> (S, A))): S = perform(StateOp.Get(), resume)
-  // final inline def put(inline newState: S): Unit = perform(StateOp.Put(newState))
-  // final inline def update(inline upd: S => S): Unit = put(upd(get()))
+class PureStateCapability[S, A] extends MultiShotCapability[State[S], S -> (S, A), S -> (S, A)] {
+  final inline def get()(resume: S => S -> (S, A)): S ->{resume} (S, A) = perform(StateOp.Get())(resume)
+  final inline def put(newState: S)(resume: Unit => S -> (S, A)): S ->{resume} (S, A) = perform(StateOp.Put(newState))(resume)
+  override def perform[V](eff: StateEff[S, V])(resume: V => (S ->{this} (S, A))): S ->{resume} (S, A) = eff match {
+    case StateOp.Get() => (currentState: S) => resume(currentState)(currentState)
+    case StateOp.Put(newState) => (_: S) => resume(())(newState)
+  }
 }
 
-// class PuredStateCapability[S, A] extends MultiShotCapability[State[S], S -> (S, A), S -> (S, A)] {
-//   override def perform[V](eff: StateEff[S, V], resume: V => (S ->{this} (S, A))): S ->{resume} (S, A) = eff match {
-//     case StateOp.Get() => (currentState: S) => resume(currentState)(currentState)
-//     case StateOp.Put(newState) => (_: S) => resume(())(newState)
-//   }
-// }
+class PurerStateCapability[S] extends MultiShotCapability[State[S], S -> S, S -> S] {
+  final inline def get()(resume: S => S -> S): S ->{resume} S = perform(StateOp.Get())(resume)
+  final inline def put(newState: S)(resume: Unit => S -> S): S ->{resume} S = perform(StateOp.Put(newState))(resume)
+  override def perform[V](eff: StateEff[S, V])(resume: V => (S ->{this} S)): S ->{resume} S = eff match {
+    case StateOp.Get() => (currentState: S) => resume(currentState)(currentState)
+    case StateOp.Put(newState) => (_: S) => resume(())(newState)
+  }
+}
 
-// class PurerStateCapability[S] extends MultiShotCapability[State[S], S -> S, S -> S] {
-//   override def perform[V](eff: StateEff[S, V], resume: V => (S ->{this} S)): S ->{resume} S = eff match {
-//     case StateOp.Get() => (currentState: S) => resume(currentState)(currentState)
-//     case StateOp.Put(newState) => (_: S) => resume(())(newState)
-//   }
-// }
-
-
-// class SafePureStateCapability[S, A] extends MultiShotCapability[State[S], S -> Bounce[(S, A)], S -> Bounce[(S, A)]] {
-//   override def perform[V](eff: StateEff[S, V], resume: V => S ->{this} Bounce[(S, A)]): S ->{resume} Bounce[(S, A)] = {
-//     val r = eff match {
-//       case StateOp.Get() => (currentState: S) => suspend(resume(currentState)(currentState))
-//       case StateOp.Put(newState) => ((_: S) => suspend(resume(())(newState)))
-//     }
-//     r.asInstanceOf[S ->{resume} Bounce[(S, A)]]
-//   }
-// }
+class SafePureStateCapability[S, A] extends MultiShotCapability[State[S], S -> Bounce[(S, A)], S -> Bounce[(S, A)]] {
+  override def perform[V](eff: StateEff[S, V])(resume: V => S ->{this} Bounce[(S, A)]): S ->{resume} Bounce[(S, A)] = {
+    val r = eff match {
+      case StateOp.Get() => (currentState: S) => suspend(resume(currentState)(currentState))
+      case StateOp.Put(newState) => ((_: S) => suspend(resume(())(newState)))
+    }
+    r.asInstanceOf[S ->{resume} Bounce[(S, A)]]
+  }
+}
 
 object State {
   inline def runMut[S, R](inline initial: S)(inline prog: StatefulCapability[S] ?=> R): (S, R) = {
