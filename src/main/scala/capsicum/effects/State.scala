@@ -87,10 +87,9 @@ object State {
     val r = b.eval
     (h.state, r)
   }
-  // pure doesn't work as well because it captures h
 
-  // inline def runPureSafe[S, A](inline initial: S)(inline prog: SafePureStateCapability[S, A] ?=> (S -> Bounce[(S, A)])): (S, A) = {
-  //   val h = new SafePureStateCapability[S, A]
-  //   h.run(prog)(initial).eval
-  // }
+  inline def runPureSafe[S, A](inline initial: S)(inline prog: SafePureStateCapability[S, A] ?=> (S -> Bounce[(S, A)])): (S, A) = {
+    val h = new SafePureStateCapability[S, A]
+    h.run(prog)(initial).eval
+  }
 }
