@@ -13,10 +13,10 @@ trait QueryCapability[R] extends MonoCapability[[V] =>> QueryEff[V], R] {
 class ToLoggedHttpHandler[R](using http: HttpCapability[R], logging: LoggingCapability[R]) extends QueryCapability[R] {
   override def perform[V](eff: QueryEff[V], resume: V => R): R = eff match {
     case ListFruits() =>
-      logging.logMsg("Retrieving fruits...", { _ =>
-        http.get("http://my-fruit-api.com", { response =>
+      logging.logMsg("Retrieving fruits...") { _ =>
+        http.get("http://my-fruit-api.com") { response =>
           resume(response.split('\n').toVector)
-        })
-      })
+        }
+      }
   }
 }
