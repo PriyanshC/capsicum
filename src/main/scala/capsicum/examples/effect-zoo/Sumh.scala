@@ -10,11 +10,11 @@ object Sumh {
   inline def program(r: Int)(using count: StateCapability[Int, Bounce[(Int, Long)]], sum: StateCapability[Long, Bounce[(Int, Long)]]): Bounce[(Int, Long)] = {
     def rec: Bounce[(Int, Long)] = {
       count.get { s =>
-        count.update(_ + 1, { _ =>
-          sum.update(_ + s.toLong, {_ =>
+        count.update(_ + 1) { _ =>
+          sum.update(_ + s.toLong) {_ =>
             if s < r then suspend[(Int, Long), {}, {}](rec) else count.get(c => result((c, s)))
-          })
-        })
+          }
+        }
       }
     }
     rec

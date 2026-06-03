@@ -9,11 +9,11 @@ def basicMutableState(): Int = {
   
   def prog(using state: StateCapability[Int, Int]): Int = {
     state.get { s1 =>
-      state.put(s1 + 5, { _ =>
+      state.put(s1 + 5) { _ =>
         state.get { s2 =>
           s2
         }
-      })
+      }
     }
   }
   
@@ -25,11 +25,11 @@ def basicPureState(): Int = {
   
   def prog(using state: PureStateCapability[Int, Int]): Int ->{state} (Int, Int) = {
     state.get { s1 =>
-      state.put(s1 + 5, { _ =>
+      state.put(s1 + 5) { _ =>
         state.get { s2 =>
           (currentState: Int) => (currentState, s2)
         }
-      })
+      }
     }
   }
 
@@ -54,9 +54,9 @@ def trackedState(): Unit = {
       logger.log("Hi from scoped captured state")
       
       val newLogger: Logger^{fs} = new Logger(fs)
-      state.put(newLogger, { _ =>
+      state.put(newLogger) { _ =>
         println("Logger updated!")
-      })
+      }
     }
   }
 
@@ -67,9 +67,9 @@ def trackedState(): Unit = {
       // Using a new tracked FS wouldn't be ok, we don't know what C^ includes
       val untrackedFs: FileSystem = new FileSystem
       val newLogger: Logger^{} = new Logger(untrackedFs)
-      state.put(newLogger, { _ =>
+      state.put(newLogger) { _ =>
         println("Logger updated!")
-      })
+      }
     }
   }
 
