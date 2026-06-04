@@ -11,7 +11,7 @@ trait LoggingCapability[R] extends MonoCapability[[V] =>> LoggingEff[V], R] {
   final inline def logMsg(inline text: String): (Unit => R) => R = perform(LogMsg(text))
 }
 
-class AccumulateLogMessagesHandler[R](using writer: WriterCapability[Vector[String], R, R]) extends LoggingCapability[R] {
+class AccumulateLogMessagesHandler[R](using writer: WriterCapability[Vector[String], R]) extends LoggingCapability[R] {
   override def perform[V](eff: LoggingEff[V])(resume: V => R): R^{resume} = eff match {
     case LogMsg(text) => ???//writer.tell(Vector(text))(resume)
   }
