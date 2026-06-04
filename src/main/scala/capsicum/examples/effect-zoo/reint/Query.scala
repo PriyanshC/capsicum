@@ -6,7 +6,7 @@ import capsicum.effects._
 sealed trait QueryEff[V] extends Effect[V]
 case class ListFruits() extends QueryEff[Vector[String]]
 
-trait QueryCapability[R] extends MonoCapability[[V] =>> QueryEff[V], R] {
+trait QueryCapability[R] extends Capability[[V] =>> QueryEff[V], R, R] {
   final inline def listFruits(inline resume: Vector[String] => R): R = perform(ListFruits(), resume)
 }
 

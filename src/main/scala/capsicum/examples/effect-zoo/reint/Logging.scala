@@ -7,7 +7,7 @@ import scala.language.experimental.captureChecking
 sealed trait LoggingEff[V] extends Effect[V]
 case class LogMsg(text: String) extends LoggingEff[Unit]
 
-trait LoggingCapability[R] extends MonoCapability[[V] =>> LoggingEff[V], R] {
+trait LoggingCapability[R] extends Capability[[V] =>> LoggingEff[V], R, R] {
   final inline def logMsg(inline text: String)(inline resume: Unit => R): R = perform(LogMsg(text), resume)
 }
 
