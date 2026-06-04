@@ -8,17 +8,14 @@ sealed trait WriterEff[T, V] extends Effect[V]
 case class Tell[T](t: T) extends WriterEff[T, Unit]
 type Writer[T] = [V] =>> WriterEff[T, V]
 
-trait WriterCapability[T, P, R] extends Capability[Writer[T], P, R] {
-  final inline def tell(t: T): (Unit => P) => R = perform(Tell(t))
+trait WriterCapability[T, R] extends Capability[Writer[T], R, R] {
+  final inline def tell(t: T): (Unit => R) => R = perform(Tell(t))
 }
 
-class LogWriter[T, R] extends WriterCapability[T, R, R] {
+class LogWriter[T, R] extends WriterCapability[T, R] with OneShotCapability[Writer[T], R, R] with NoMapResult[R] {
   private val logBuffer = ListBuffer.empty[T]
-  def logs: List[T] = logs.toList
+  def logs: List[T] = logBuffer.toList
 
-  override def perform[V](effect: WriterEff[T, V])(resume: V => R): R = effect match {
-    case Tell(value) => 
-      logBuffer += value
-      resume(())
-  }
+  override def handleEff[V](eff: Writer[T][V]): V = eff match
+    case Tell(t) => (logBuffer += t): Unit
 }

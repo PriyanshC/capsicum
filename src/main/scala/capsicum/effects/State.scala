@@ -16,13 +16,20 @@ trait StateCapability[S, R] extends Capability[State[S], R, R] {
   final inline def put(inline newState: S): (Unit => R) => R = perform(StateOp.Put(newState))
   final inline def update(inline upd: S => S)(inline resume: Unit => R): R = get(s => put(upd(s))(resume))
 
-  def asReader: ReaderCapability[S, R, R] = new ReaderCapability[S, R, R] {
-    override def perform[V](eff: ReaderEff[S, V])(resume: V => R): R = eff match
-      case Ask() => get(resume)
+  def asReader: ReaderCapability[S, R] = {
+    val state = this
+    new ReaderCapability[S, R] {
+      override def perform[V](eff: ReaderEff[S, V])(resume: V => R): R = eff match
+        case Ask() => state.get(resume)
+    }
   }
-  def asWriter: WriterCapability[S, R, R] = new WriterCapability[S, R, R] {
-    override def perform[V](eff: WriterEff[S, V])(resume: V => R): R = eff match
-      case Tell(t) => put(t)(resume)
+
+  def asWriter: WriterCapability[S, R] = {
+    val state = this
+    new WriterCapability[S, R] {
+      override def perform[V](eff: WriterEff[S, V])(resume: V => R): R = eff match
+        case Tell(t) => state.put(t)(resume)
+    }
   }
 }
 
@@ -30,7 +37,7 @@ trait StatefulCapability[S, R] extends StateCapability[S, R] {
   def runTuple(prog: this.type ?=> R): (S, R)
 }
 
-class RWStateHandler[S, R](r: ReaderCapability[S, R, R], w: WriterCapability[S, R, R]) extends StateCapability[S, R] {
+class RWStateHandler[S, R](r: ReaderCapability[S, R], w: WriterCapability[S, R]) extends StateCapability[S, R] {
   override def perform[V](eff: State[S][V])(resume: V => R): R = eff match
     case StateOp.Get() => r.ask(resume)
     case StateOp.Put(value) => w.tell(value)(resume)
@@ -83,7 +90,6 @@ object State {
     val r = b.eval
     (h.state, r)
   }
-  // pure doesn't work as well because it captures h
 
   inline def runPureSafe[S, A](inline initial: S)(inline prog: SafePureStateCapability[S, A] ?=> (S -> Bounce[(S, A)])): (S, A) = {
     val h = new SafePureStateCapability[S, A]

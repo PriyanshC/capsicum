@@ -7,11 +7,11 @@ sealed trait ReaderEff[T, V] extends Effect[V]
 case class Ask[T]() extends ReaderEff[T, T]
 type Reader[T] = [V] =>> ReaderEff[T, V]
 
-trait ReaderCapability[T, P, R] extends Capability[Reader[T], P, R] {
-  final inline def ask: (T => P) => R = perform(Ask())
+trait ReaderCapability[T, R] extends Capability[Reader[T], R, R] {
+  final inline def ask: (T => R) -> R = perform(Ask())
 }
 
-class EnvCapability[T, R](env: T) extends ReaderCapability[T, R, R] with OneShotCapability[Reader[T], R, R] with NoMapResult[R] {
+class EnvCapability[T, R](env: T) extends ReaderCapability[T, R] with OneShotCapability[Reader[T], R, R] with NoMapResult[R] {
   override def handleEff[V](eff: Reader[T][V]): V = eff match
     case Ask() => env  
 }

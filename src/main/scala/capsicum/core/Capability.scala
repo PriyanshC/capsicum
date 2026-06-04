@@ -30,8 +30,8 @@ type MonoCapability[-E <: Effect, R] = Capability[E, R, R]
 
 trait OneShotCapability[-E <: Effect, -P, R] extends Capability[E, P, R] {
   final override def perform[V](eff: E[V])(resume: V => P): R = handleResult(resume(handleEff(eff)))
-  def handleEff[V](eff: E[V]): V
-  def handleResult(result: P): R
+  protected def handleEff[V](eff: E[V]): V
+  protected def handleResult(result: P): R
 }
 
 trait NoMapResult[R] {
