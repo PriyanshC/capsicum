@@ -9,8 +9,9 @@ def basicAsyncProgram(): Unit = {
   def prog(using async: AsyncCapability[Unit]): Unit = {
     val threadWork = () => { println("Hello from thread"); 42 }
     async.fork(threadWork) { fiber =>
-      println("Forked")
-      async.join(fiber) { result => println(s"Got result: $result")}
+      // println("Forked")
+      // async.join(fiber) { result => println(s"Got result: $result")}
+      ???
     }
   }
 
