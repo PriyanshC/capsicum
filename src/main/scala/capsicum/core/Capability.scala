@@ -22,7 +22,7 @@ trait Capability[-E <: Effect, -P, R] extends BaseCapability[E, P, R] with caps.
 trait UniqueCapability[-E <: Effect, -P, R] extends BaseCapability[E, P, R] with caps.ExclusiveCapability
 
 trait OneShotCapability[-E <: Effect, -P, R] extends Capability[E, P, R] {
-  final override def perform[V](eff: E[V], resume: V => P): R = ???
+  final override def perform[V](eff: E[V], resume: V => P): R = handleResult(resume(handleEff(eff)))
   protected def handleEff[V](eff: E[V]): V
   protected def handleResult(result: P): R
 }
