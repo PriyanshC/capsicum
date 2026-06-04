@@ -28,8 +28,8 @@ trait OneShot[-E <: Effect, -P, R] {
   protected def handleResult(result: P): R
 }
 
-trait KeepResult[R] {
-  this: OneShot[?, R, R]^ =>
+trait OneShotKeepResult[-E <: Effect, R] extends OneShot[E, R, R] {
+  this: BaseCapability[E, R, R]^ =>
   final override def handleResult(result: R): R = result
 }
 
