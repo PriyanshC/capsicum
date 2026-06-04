@@ -29,7 +29,7 @@ trait UniqueCapability[-E <: Effect, -P, R] extends BaseCapability[E, P, R] with
 type MonoCapability[-E <: Effect, R] = Capability[E, R, R]
 
 trait OneShotCapability[-E <: Effect, -P, R] extends Capability[E, P, R] {
-  final override def perform[V](eff: E[V])(resume: V => P): R = handleResult(resume(handleEff(eff)))
+  final override inline def perform[V](eff: E[V])(resume: V => P): R = handleResult(resume(handleEff(eff)))
   protected def handleEff[V](eff: E[V]): V
   protected def handleResult(result: P): R
 }
