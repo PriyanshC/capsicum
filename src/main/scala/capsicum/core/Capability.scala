@@ -36,7 +36,7 @@ trait OneShotCapability[-E <: Effect, -P, R] extends Capability[E, P, R] {
 
 trait NoMapResult[R] {
   this: OneShotCapability[?, R, R]^ =>
-  final override inline def handleResult(result: R): R = result
+  final override def handleResult(result: R): R = result
 }
 
 def run[K1 <: BaseCapability[?, ?, R], K2 <: BaseCapability[?, ?, R], R](
