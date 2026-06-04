@@ -31,10 +31,6 @@ trait AsyncCapability[R] extends Capability[AsyncEff, R, R] {
 
 class VirtualAsyncHandler[R](using ec: ExecutionContext) extends AsyncCapability[R] with OneShotCapability[AsyncEff, R, R] with NoMapResult[R] {
   override def handleEff[V](eff: AsyncEff[V]): V = eff match
-    case f: AsyncOp.Fork[t] => {
-      val promise = Promise[t]()
-      Thread.ofVirtual().start(() => promise.complete(Try(f.task())))
-      Fiber(promise.future)
-    }
+    case AsyncOp.Fork(task) => Fiber(Future(task()))
     case AsyncOp.Join(fiber) => fiber.get()
 }
