@@ -10,12 +10,12 @@ object ProduceOp {
 }
 
 trait ProducerCapability[A, R] extends Capability[[V] =>> ProduceOp[A, V], R, R] {
-  final def produce(resume: A -> R): R = perform(ProduceOp.GetValue(), resume)
+  final def produce(resume: A -> R): R = perform(ProduceOp.GetValue())(resume)
 }
 
 lazy object ContinuationLeakDemo {
   class UnsafeHandler[R] extends ProducerCapability[Unit -> Unit, R] {
-    override def perform[V](op: ProduceOp[Unit -> Unit, V], resume: V => R): R = op match
+    override def perform[V](op: ProduceOp[Unit -> Unit, V])(resume: V => R): R = op match
     case ProduceOp.GetValue() => {
       /* Note: Removing ^{resume} yields the same error as below, but now earlier */
       val leakingInner: Unit ->{resume} Unit = { (_: Unit) =>
@@ -39,7 +39,7 @@ lazy object SmuggledHandlerDemo {
   
   def naughtyProgram(): MyCap ?-> Unit = {
     val handler = summon[MyCap]
-    handler.perform(ProduceOp.GetValue(), { (f: Unit -> Unit) =>
+    handler.perform(ProduceOp.GetValue())({ (f: Unit -> Unit) =>
       /* ERROR:
       Note that capability `handler` cannot flow into capture set
       because handler in an enclosing function is not visible from any in variable smuggledStorage.
@@ -55,7 +55,7 @@ lazy object SmuggledHandlerFnDemo {
   
   def naughtyProgram(): ProducerCapability[Unit -> Unit, Unit] ?-> Unit = {
     val handler = summon[ProducerCapability[Unit -> Unit, Unit]]
-    handler.perform(ProduceOp.GetValue(), { (f: Unit -> Unit) =>
+    handler.perform(ProduceOp.GetValue())({ (f: Unit -> Unit) =>
       /* ERROR:
       Note that capability `handler` cannot flow into capture set
       because handler in an enclosing function is not visible from any in variable smuggledStorage

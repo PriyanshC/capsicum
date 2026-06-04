@@ -14,7 +14,7 @@ trait Effect[V]
 * @tparam R the final return type
 */
 sealed trait BaseCapability[-E <: Effect, -P, R] {
-  def perform[V](eff: E[V], resume: V => P): R^{resume}
+  def perform[V](eff: E[V])(resume: V => P): R^{resume}
   final inline def run(inline prog: this.type ?=> R): R = prog(using this)
 }
 
@@ -23,7 +23,7 @@ trait UniqueCapability[-E <: Effect, -P, R] extends BaseCapability[E, P, R] with
 
 trait OneShot[-E <: Effect, -P, R] {
   this: BaseCapability[E, P, R]^ =>
-  final override def perform[V](eff: E[V], resume: V => P): R = handleResult(resume(handleEff(eff)))
+  final override def perform[V](eff: E[V])(resume: V => P): R = handleResult(resume(handleEff(eff)))
   protected def handleEff[V](eff: E[V]): V
   protected def handleResult(result: P): R
 }

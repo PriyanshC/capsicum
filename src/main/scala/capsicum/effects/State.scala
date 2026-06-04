@@ -12,16 +12,16 @@ object StateOp {
 }
 
 trait StateCapability[S, R] extends Capability[State[S], R, R] {
-  final inline def get(inline resume: S => R): R = perform(StateOp.Get(), resume)
-  final inline def put(inline newState: S)(inline resume: Unit => R): R = perform(StateOp.Put(newState), resume)
+  final inline def get(inline resume: S => R): R = perform(StateOp.Get())(resume)
+  final inline def put(inline newState: S)(inline resume: Unit => R): R = perform(StateOp.Put(newState))(resume)
   final inline def update(inline upd: S => S)(inline resume: Unit => R): R = get(s => put(upd(s))(resume))
 
   def asReader: ReaderCapability[S, R, R] = new ReaderCapability[S, R, R] {
-    override def perform[V](eff: Reader[S][V], resume: V => R): R = eff match
+    override def perform[V](eff: Reader[S][V])(resume: V => R): R = eff match
       case Ask() => get(resume)
   }
   def asWriter: WriterCapability[S, R, R] = new WriterCapability[S, R, R] {
-    override def perform[V](eff: Writer[S][V], resume: V => R): R = eff match
+    override def perform[V](eff: Writer[S][V])(resume: V => R): R = eff match
       case Tell(t) => put(t)(resume)
   }
 }
@@ -31,7 +31,7 @@ trait StatefulCapability[S, R] extends StateCapability[S, R] {
 }
 
 class RWStateHandler[S, R](r: ReaderCapability[S, R, R], w: WriterCapability[S, R, R]) extends StateCapability[S, R] {
-  override def perform[V](eff: StateEff[S, V], resume: V => R): R = eff match
+  override def perform[V](eff: StateEff[S, V])(resume: V => R): R = eff match
     case StateOp.Get() => r.ask(resume)
     case StateOp.Put(value) => w.tell(value)(resume)
 }
@@ -48,14 +48,14 @@ class MutableStateHandler[S, R](private [effects] var state: S) extends Stateful
 }
 
 class PureStateCapability[S, A] extends StateCapability[S, S -> (S, A)] {
-  override def perform[V](eff: StateEff[S, V], resume: V => (S ->{this} (S, A))): S ->{resume} (S, A) = eff match {
+  override def perform[V](eff: StateEff[S, V])(resume: V => (S ->{this} (S, A))): S ->{resume} (S, A) = eff match {
     case StateOp.Get() => (currentState: S) => resume(currentState)(currentState)
     case StateOp.Put(newState) => (_: S) => resume(())(newState)
   }
 }
 
 class PurerStateCapability[S] extends StateCapability[S, S -> S] {
-  override def perform[V](eff: StateEff[S, V], resume: V => (S ->{this} S)): S ->{resume} S = eff match {
+  override def perform[V](eff: StateEff[S, V])(resume: V => (S ->{this} S)): S ->{resume} S = eff match {
     case StateOp.Get() => (currentState: S) => resume(currentState)(currentState)
     case StateOp.Put(newState) => (_: S) => resume(())(newState)
   }
@@ -63,7 +63,7 @@ class PurerStateCapability[S] extends StateCapability[S, S -> S] {
 
 
 class SafePureStateCapability[S, A] extends StateCapability[S, S -> Bounce[(S, A)]] {
-  override def perform[V](eff: StateEff[S, V], resume: V => (S ->{this} Bounce[(S, A)])): S ->{resume} Bounce[(S, A)] = {
+  override def perform[V](eff: StateEff[S, V])(resume: V => (S ->{this} Bounce[(S, A)])): S ->{resume} Bounce[(S, A)] = {
     val r = eff match {
       case StateOp.Get() => (currentState: S) => suspend(resume(currentState)(currentState))
       case StateOp.Put(newState) => ((_: S) => suspend(resume(())(newState)))

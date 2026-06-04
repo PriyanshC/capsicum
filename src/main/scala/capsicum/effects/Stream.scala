@@ -9,23 +9,23 @@ sealed trait StreamEff[+T, V] extends Effect[V]
 case class Yield[T](value: T) extends StreamEff[T, Unit]
 
 trait StreamCap[T, R] extends Capability[[V] =>> StreamEff[T, V], R, R] {
-  final def emit(value: T)(resume: Unit => R): R^{resume} = perform(Yield(value), resume)
+  final def emit(value: T)(resume: Unit => R): R^{resume} = perform(Yield(value))(resume)
 }
 
 // TODO allow impure function args?
 
 class MapHandler[A, B, R](f: A -> B)(out: StreamCap[B, R]) extends StreamCap[A, R] {
-  override inline def perform[V](eff: StreamEff[A, V], resume: V => R): R^{resume} = eff match
+  override inline def perform[V](eff: StreamEff[A, V])(resume: V => R): R^{resume} = eff match
     case Yield(a) => out.emit(f(a))(resume)
 }
 
 class FilterHandler[A, R](p: A -> Boolean)(out: StreamCap[A, R]) extends StreamCap[A, R] {
-  override inline def perform[V](eff: StreamEff[A, V], resume: V => R): R^{resume} = eff match
+  override inline def perform[V](eff: StreamEff[A, V])(resume: V => R): R^{resume} = eff match
     case Yield(a) => if (p(a)) out.emit(a)(resume) else resume(())
 }
 
 class FoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCap[T, S] {
-  override inline def perform[V](eff: StreamEff[T, V], resume: V => S): S^{resume} = eff match
+  override inline def perform[V](eff: StreamEff[T, V])(resume: V => S): S^{resume} = eff match
     case Yield(v) => {
       current = f(current, v)
       resume(())
@@ -36,7 +36,7 @@ class FoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCa
 
 class SinkHandler[T] extends StreamCap[T, Unit] {
   private var sink: mutable.Buffer[T] = mutable.Buffer.empty
-  override def perform[V](eff: StreamEff[T, V], resume: V => Unit): Unit = eff match
+  override def perform[V](eff: StreamEff[T, V])(resume: V => Unit): Unit = eff match
     case Yield(v) => {
       sink += v
       resume(())
@@ -64,7 +64,7 @@ class BroadcastHandler[T, R, C^, D^] extends StreamCap[T, R] {
     activeSubscribers -= subscriber
   }
 
-  override inline def perform[V](eff: StreamEff[T, V], resume: V => R): R^{resume} = eff match
+  override inline def perform[V](eff: StreamEff[T, V])(resume: V => R): R^{resume} = eff match
     case Yield(value) => 
       activeSubscribers.foreach(s => s.emit(value)(_ => s.cont()))
       resume(())
@@ -72,7 +72,7 @@ class BroadcastHandler[T, R, C^, D^] extends StreamCap[T, R] {
 
 // Needs resume-capturing perform()
 class SafeFoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCap[T, Bounce[S]] {
-  override def perform[V](eff: StreamEff[T, V], resume: V => Bounce[S]): Bounce[S]^{resume} = eff match {
+  override def perform[V](eff: StreamEff[T, V])(resume: V => Bounce[S]): Bounce[S]^{resume} = eff match {
     case Yield(v) => 
       current = f(current, v)
       suspend(resume(()))
@@ -86,7 +86,7 @@ class SafeBatchedFoldHandler[T: ClassTag, S](private var current: S, batchSize: 
   private val buf = new Array[T](batchSize)
   private var pos = 0
 
-  override def perform[V](eff: StreamEff[T, V], resume: V => Bounce[S]): Bounce[S]^{resume} = eff match {
+  override def perform[V](eff: StreamEff[T, V])(resume: V => Bounce[S]): Bounce[S]^{resume} = eff match {
     case Yield(v) => 
       buf(pos) = v
       pos += 1
@@ -108,7 +108,7 @@ class SafeBatchedFoldHandler[T: ClassTag, S](private var current: S, batchSize: 
 class SafeSinkHandler[T] extends StreamCap[T, Bounce[Seq[T]]] {
   private var sink: mutable.Buffer[T] = mutable.Buffer.empty
   
-  override def perform[V](eff: StreamEff[T, V], resume: V => Bounce[Seq[T]]): Bounce[Seq[T]]^{resume} = eff match {
+  override def perform[V](eff: StreamEff[T, V])(resume: V => Bounce[Seq[T]]): Bounce[Seq[T]]^{resume} = eff match {
     case Yield(v) => 
       sink += v
       suspend(resume(()))
