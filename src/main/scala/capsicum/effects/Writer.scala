@@ -12,7 +12,7 @@ trait WriterCapability[T, P, R] extends Capability[Writer[T], P, R] {
   final inline def tell(t: T)(inline resume: Unit => P): R = perform(Tell(t), resume)
 }
 
-class LogWriter[T, R] extends WriterCapability[T, R, R] with OneShotCapability[Writer[T], R, R] with KeepResult[R] {
+class LogWriter[T, R] extends WriterCapability[T, R, R] with OneShot[Writer[T], R, R] with KeepResult[R] {
   private val logBuffer = ListBuffer.empty[T]
   def logs: List[T] = logs.toList
 

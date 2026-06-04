@@ -29,7 +29,7 @@ trait AsyncCapability[R] extends Capability[AsyncEff, R, R] {
   final inline def join[T](inline fiber: Fiber[T])(inline resume: T => R): R = perform(AsyncOp.Join(fiber), resume)
 }
 
-class VirtualAsyncHandler[R](using ec: ExecutionContext) extends AsyncCapability[R] with OneShotCapability[AsyncEff, R, R] with KeepResult[R] {
+class VirtualAsyncHandler[R](using ec: ExecutionContext) extends AsyncCapability[R] with OneShot[AsyncEff, R, R] with KeepResult[R] {
   override protected def handleEff[V](eff: AsyncEff[V]): V = eff match
     case AsyncOp.Fork(task) => Fiber(Future(task()))
     case AsyncOp.Join(fiber) => fiber.get()

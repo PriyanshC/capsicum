@@ -21,14 +21,15 @@ sealed trait BaseCapability[-E <: Effect, -P, R] {
 trait Capability[-E <: Effect, -P, R] extends BaseCapability[E, P, R] with caps.SharedCapability
 trait UniqueCapability[-E <: Effect, -P, R] extends BaseCapability[E, P, R] with caps.ExclusiveCapability
 
-trait OneShotCapability[-E <: Effect, -P, R] extends Capability[E, P, R] {
+trait OneShot[-E <: Effect, -P, R] {
+  this: BaseCapability[E, P, R]^ =>
   final override def perform[V](eff: E[V], resume: V => P): R = handleResult(resume(handleEff(eff)))
   protected def handleEff[V](eff: E[V]): V
   protected def handleResult(result: P): R
 }
 
 trait KeepResult[R] {
-  this: OneShotCapability[?, R, R]^ =>
+  this: OneShot[?, R, R]^ =>
   final override def handleResult(result: R): R = result
 }
 
