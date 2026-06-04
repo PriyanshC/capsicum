@@ -12,13 +12,10 @@ trait WriterCapability[T, P, R] extends Capability[Writer[T], P, R] {
   final inline def tell(t: T)(inline resume: Unit => P): R = perform(Tell(t), resume)
 }
 
-class LogWriter[T, R] extends WriterCapability[T, R, R] {
+class LogWriter[T, R] extends WriterCapability[T, R, R] with OneShotCapability[Writer[T], R, R] with KeepResult[R] {
   private val logBuffer = ListBuffer.empty[T]
   def logs: List[T] = logs.toList
 
-  override def perform[V](effect: WriterEff[T, V], resume: V => R): R = effect match {
-    case Tell(value) => 
-      logBuffer += value
-      resume(())
-  }
+  override protected def handleEff[V](eff: Writer[T][V]): V = eff match
+    case Tell(t) => (logBuffer += t): Unit
 }
