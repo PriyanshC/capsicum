@@ -53,73 +53,73 @@ trait Subscriber[T] extends StreamCap[T, Unit] {
   def cont(): Unit
 }
 
-// class BroadcastHandler[T, R, C^, D^] extends StreamCap[T, R] {  
-//   private val activeSubscribers: mutable.ListBuffer[Subscriber[T]^{C}] = mutable.ListBuffer.empty[Subscriber[T]^{C}]
+class BroadcastHandler[T, R, C^, D^] extends StreamCap[T, R] {  
+  private val activeSubscribers: mutable.ListBuffer[Subscriber[T]^{C}] = mutable.ListBuffer.empty[Subscriber[T]^{C}]
 
-//   def subscribe(subscriber: Subscriber[T]^{C}): Unit = {
-//     activeSubscribers += subscriber
-//   }
+  def subscribe(subscriber: Subscriber[T]^{C}): Unit = {
+    activeSubscribers += subscriber
+  }
 
-//   def unsubscribe(subscriber: Subscriber[T]^{C}): Unit = {
-//     activeSubscribers -= subscriber
-//   }
+  def unsubscribe(subscriber: Subscriber[T]^{C}): Unit = {
+    activeSubscribers -= subscriber
+  }
 
-//   override inline def perform[V](eff: StreamEff[T, V], resume: V => R): R^{resume} = eff match
-//     case Yield(value) => 
-//       activeSubscribers.foreach(s => s.emit(value)(_ => s.cont()))
-//       resume(())
-// }
+  override inline def perform[V](eff: StreamEff[T, V])(resume: V => R): R^{resume} = eff match
+    case Yield(value) => 
+      activeSubscribers.foreach(s => s.emit(value)(_ => s.cont()))
+      resume(())
+}
 
-// // Needs resume-capturing perform()
-// class SafeFoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCap[T, Bounce[S]] {
-//   override def perform[V](eff: StreamEff[T, V], resume: V => Bounce[S]): Bounce[S]^{resume} = eff match {
-//     case Yield(v) => 
-//       current = f(current, v)
-//       suspend(resume(()))
-//   }
+// Needs resume-capturing perform()
+class SafeFoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCap[T, Bounce[S]] {
+  override def perform[V](eff: StreamEff[T, V])(resume: V => Bounce[S]): Bounce[S]^{resume} = eff match {
+    case Yield(v) => 
+      current = f(current, v)
+      suspend(resume(()))
+  }
   
-//   def acc: S = current
-// }
+  def acc: S = current
+}
 
 
-// class SafeBatchedFoldHandler[T: ClassTag, S](private var current: S, batchSize: Int)(f: (S, Array[T]) -> S) extends StreamCap[T, Bounce[S]] {
-//   private val buf = new Array[T](batchSize)
-//   private var pos = 0
+class SafeBatchedFoldHandler[T: ClassTag, S](private var current: S, batchSize: Int)(f: (S, Array[T]) -> S) extends StreamCap[T, Bounce[S]] {
+  private val buf = new Array[T](batchSize)
+  private var pos = 0
 
-//   override def perform[V](eff: StreamEff[T, V], resume: V => Bounce[S]): Bounce[S]^{resume} = eff match {
-//     case Yield(v) => 
-//       buf(pos) = v
-//       pos += 1
-//       if (pos == batchSize) {
-//         current = f(current, buf.clone())
-//         pos = 0
-//       }
-//       suspend(resume(()))
-//   }
+  override def perform[V](eff: StreamEff[T, V])(resume: V => Bounce[S]): Bounce[S]^{resume} = eff match {
+    case Yield(v) => 
+      buf(pos) = v
+      pos += 1
+      if (pos == batchSize) {
+        current = f(current, buf.clone())
+        pos = 0
+      }
+      suspend(resume(()))
+  }
   
-//   def flush(): S = {
-//     if (pos > 0) {
-//       current = f(current, buf.slice(0, pos))
-//     }
-//     current
-//   }
-// }
+  def flush(): S = {
+    if (pos > 0) {
+      current = f(current, buf.slice(0, pos))
+    }
+    current
+  }
+}
 
-// class SafeSinkHandler[T] extends StreamCap[T, Bounce[Seq[T]]] {
-//   private var sink: mutable.Buffer[T] = mutable.Buffer.empty
+class SafeSinkHandler[T] extends StreamCap[T, Bounce[Seq[T]]] {
+  private var sink: mutable.Buffer[T] = mutable.Buffer.empty
   
-//   override def perform[V](eff: StreamEff[T, V], resume: V => Bounce[Seq[T]]): Bounce[Seq[T]]^{resume} = eff match {
-//     case Yield(v) => 
-//       sink += v
-//       suspend(resume(()))
-//   }
+  override def perform[V](eff: StreamEff[T, V])(resume: V => Bounce[Seq[T]]): Bounce[Seq[T]]^{resume} = eff match {
+    case Yield(v) => 
+      sink += v
+      suspend(resume(()))
+  }
 
-//   def collect: Seq[T] = {
-//     val res = sink.toVector
-//     sink = mutable.Buffer.empty
-//     res
-//   }
-// }
+  def collect: Seq[T] = {
+    val res = sink.toVector
+    sink = mutable.Buffer.empty
+    res
+  }
+}
 
 object Stream {
   inline def map[A, B, R](inline f: A -> B)(prog: MapHandler[A, B, R] ?=> R)(using inline out: StreamCap[B, R]): R = {
@@ -215,29 +215,29 @@ trait SafeChainedStream[A] {
     }
   }
 
-  // def fold[S](base: S)(f: (S, A) -> S): S = {
-  //   val folder = new SafeFoldHandler[A, S](base)(f)
-  //   val bounce = folder.run {
-  //     this.build(_ => result(folder.acc))
-  //   }
-  //   bounce.eval
-  // }
+  def fold[S](base: S)(f: (S, A) -> S): S = {
+    val folder = new SafeFoldHandler[A, S](base)(f)
+    val bounce = folder.run {
+      this.build(_ => result(folder.acc))
+    }
+    bounce.eval
+  }
 
-  // def collect: Seq[A] = {
-  //   val sink = new SafeSinkHandler[A]
-  //   val bounce = sink.run {
-  //     this.build(_ => result(sink.collect))
-  //   }
-  //   bounce.eval
-  // }
+  def collect: Seq[A] = {
+    val sink = new SafeSinkHandler[A]
+    val bounce = sink.run {
+      this.build(_ => result(sink.collect))
+    }
+    bounce.eval
+  }
 
-  // def batchedFold[S](base: S, batchSize: Int = 4096)(f: (S, Array[A]) -> S)(using ClassTag[A]): S = {
-  //   val folder = new SafeBatchedFoldHandler[A, S](base, batchSize)(f)
-  //   val bounce = folder.run {
-  //     this.build(_ => result(folder.flush()))
-  //   }
-  //   bounce.eval
-  // }
+  def batchedFold[S](base: S, batchSize: Int = 4096)(f: (S, Array[A]) -> S)(using ClassTag[A]): S = {
+    val folder = new SafeBatchedFoldHandler[A, S](base, batchSize)(f)
+    val bounce = folder.run {
+      this.build(_ => result(folder.flush()))
+    }
+    bounce.eval
+  }
 }
 
 /***
@@ -297,12 +297,12 @@ object Demo {
   }
 
 
-  // def round1ChainSafe(theSeq: Seq[Int]): Int = {
-  //   SafeChainedStream.fromSeq(theSeq)
-  //     .filter(x => x % 2 == 0)
-  //     .map(x => x + 1)
-  //     .fold(0)((t, s) => t + s)
-  // }
+  def round1ChainSafe(theSeq: Seq[Int]): Int = {
+    SafeChainedStream.fromSeq(theSeq)
+      .filter(x => x % 2 == 0)
+      .map(x => x + 1)
+      .fold(0)((t, s) => t + s)
+  }
 
   def round1WithSink(theSeq: Seq[Int]): Seq[Int] = {
     Stream.collect { 
@@ -321,12 +321,12 @@ object Demo {
       .collect
   }
 
-  // def round1WithSafeChainedSink(theSeq: Seq[Int]): Seq[Int] = {
-  //   SafeChainedStream.fromSeq(theSeq)
-  //     .filter(_ % 2 == 0)
-  //     .map(_ + 1)
-  //     .collect
-  // }
+  def round1WithSafeChainedSink(theSeq: Seq[Int]): Seq[Int] = {
+    SafeChainedStream.fromSeq(theSeq)
+      .filter(_ % 2 == 0)
+      .map(_ + 1)
+      .collect
+  }
 
   def demoMismatchedCleaner(theSeq: Seq[Int]) = {
     Stream.collect { 
