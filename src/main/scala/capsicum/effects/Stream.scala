@@ -8,7 +8,7 @@ import scala.collection.mutable
 sealed trait StreamEff[+T, V] extends Effect[V]
 case class Yield[T](value: T) extends StreamEff[T, Unit]
 
-trait StreamCap[T, R] extends MonoCapability[[V] =>> StreamEff[T, V], R] {
+trait StreamCap[T, R] extends Capability[[V] =>> StreamEff[T, V], R, R] {
   final def emit(value: T)(resume: Unit => R): R^{resume} = perform(Yield(value), resume)
 }
 

@@ -36,8 +36,8 @@ class RWStateHandler[S, R](r: ReaderCapability[S, R, R], w: WriterCapability[S, 
     case StateOp.Put(value) => w.tell(value)(resume)
 }
 
-class MutableStateHandler[S, R](private [effects] var state: S) extends StatefulCapability[S, R] with DirectCap[[V] =>> StateEff[S, V], R] {
-  override protected inline def apply[V](eff: StateEff[S, V]): V = eff match
+class MutableStateHandler[S, R](private [effects] var state: S) extends StatefulCapability[S, R] with OneShotCapability[State[S], R, R] with KeepResult[R] {
+  override protected def handleEff[V](eff: State[S][V]): V = eff match
     case StateOp.Get() => state
     case StateOp.Put(newState) => state = newState
   

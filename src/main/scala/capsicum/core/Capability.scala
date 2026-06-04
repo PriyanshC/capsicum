@@ -23,46 +23,13 @@ trait UniqueCapability[-E <: Effect, -P, R] extends BaseCapability[E, P, R] with
 
 trait OneShotCapability[-E <: Effect, -P, R] extends Capability[E, P, R] {
   final override def perform[V](eff: E[V], resume: V => P): R = ???
-  def handleEff[V](eff: E[V]): V
-  def handleResult(result: P): R
+  protected def handleEff[V](eff: E[V]): V
+  protected def handleResult(result: P): R
 }
 
 trait KeepResult[R] {
   this: OneShotCapability[?, R, R]^ =>
   final override def handleResult(result: R): R = result
-}
-
-/**
- * Type alias for a capability where the resumption's return and final return types are the same.
- * @tparam E the effect type
- * @tparam R the uniform type
- */
-type MonoCapability[-E <: Effect, R] = Capability[E, R, R]
-
-trait DirectCap[-E <: Effect, R] {
-  this: MonoCapability[E, R]^ =>
-    protected def apply[V](eff: E[V]): V
-    final override def perform[V](eff: E[V], resume: V => R): R = resume(apply(eff))
-}
-
-private sealed trait NullaryEff[-V, V0] extends Effect[V0]
-case class Parameterless[V]() extends NullaryEff[V, V]
-
-type Nullary[-V] = [X] =>> NullaryEff[V, X]
-
-trait NullaryCap[+V, -P, +R] {
-  this: BaseCapability[Nullary[V], P, R]^ =>
-  def perform(resume: V => P): R
-  final override inline def perform[V0](inline eff: NullaryEff[V, V0], inline resume: V0 => P): R = inline eff match {
-    case Parameterless() => perform(resume)
-  }
-}
-
-trait DirectNullaryCap[+V, R] {
-  this: MonoCapability[Nullary[V], R]^ =>
-  protected def apply(): V
-  final override inline def perform[V0](inline eff: NullaryEff[V, V0], inline resume: V0 => R): R = inline eff match
-    case Parameterless() => resume(apply())
 }
 
 def run[K1 <: BaseCapability[?, ?, R], K2 <: BaseCapability[?, ?, R], R](
