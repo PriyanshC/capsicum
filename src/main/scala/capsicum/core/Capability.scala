@@ -21,6 +21,17 @@ sealed trait BaseCapability[-E <: Effect, -P, R] {
 trait Capability[-E <: Effect, -P, R] extends BaseCapability[E, P, R] with caps.SharedCapability
 trait UniqueCapability[-E <: Effect, -P, R] extends BaseCapability[E, P, R] with caps.ExclusiveCapability
 
+trait OneShotCapability[-E <: Effect, -P, R] extends Capability[E, P, R] {
+  final override def perform[V](eff: E[V], resume: V => P): R = ???
+  def handleEff[V](eff: E[V]): V
+  def handleResult(result: P): R
+}
+
+trait KeepResult[R] {
+  this: OneShotCapability[?, R, R]^ =>
+  final override def handleResult(result: R): R = result
+}
+
 /**
  * Type alias for a capability where the resumption's return and final return types are the same.
  * @tparam E the effect type
