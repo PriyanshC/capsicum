@@ -17,12 +17,3 @@ class AccumulateLogMessagesHandler[R](using writer: WriterCapability[Vector[Stri
       writer.tell(Vector(text))(resume)
   }
 }
-
-class ToLoggedHttpHandlerM[R](using http: HttpCapability[R], logging: LoggingCapability[R]) extends QueryCapability[R] with Monadic[QueryEff, R, R] {
-  override def mperform[V](eff: QueryEff[V]): (resume: V => R) -> R^{resume} = eff match
-    case ListFruits() =>
-      for
-        _ <- logging.logMsg("Retrieving fruits..")
-        response <- http.get("http://my-fruit-api.com")
-      yield Vector()
-}
