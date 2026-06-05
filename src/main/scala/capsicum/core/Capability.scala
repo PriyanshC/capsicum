@@ -33,6 +33,12 @@ trait OneShotKeepResult[-E <: Effect, R] extends OneShot[E, R, R] {
   final override def handleResult(result: R): R = result
 }
 
+trait Monadic[-E <: Effect, -P, +R] {
+  this: BaseCapability[E, P, R]^ =>
+  final override inline def perform[V](inline eff: E[V])(inline resume: V => P): R = mperform(eff)(resume)
+  def mperform[V](eff: E[V]): (resume: V => P) => R^{resume}
+}
+
 def run[K1 <: BaseCapability[?, ?, R], K2 <: BaseCapability[?, ?, R], R](
 k1: K1, k2: K2
 )(prog: (K1, K2) ?-> R): R = {
