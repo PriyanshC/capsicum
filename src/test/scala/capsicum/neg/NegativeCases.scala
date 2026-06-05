@@ -3,20 +3,18 @@ package capsicum.neg
 import capsicum.core._
 import scala.language.experimental.captureChecking
 
-sealed trait ProduceOp[A, V] extends Effect[V]
+sealed trait ProduceEff[A, V] extends Effect[V]
+case class GetValue[A]() extends ProduceEff[A, A]
+type Produce[A] = [V] =>> ProduceEff[A, V]
 
-object ProduceOp {
-  case class GetValue[A]() extends ProduceOp[A, A]
-}
-
-trait ProducerCapability[A, R] extends Capability[[V] =>> ProduceOp[A, V], R, R] {
-  final def produce(resume: A -> R): R = perform(ProduceOp.GetValue())(resume)
+trait ProducerCapability[A, R] extends Capability[Produce[A], R, R] {
+  final def produce(resume: A -> R): R = perform(GetValue())(resume)
 }
 
 lazy object ContinuationLeakDemo {
   class UnsafeHandler[R] extends ProducerCapability[Unit -> Unit, R] {
-    override def perform[V](op: ProduceOp[Unit -> Unit, V])(resume: V => R): R = op match
-    case ProduceOp.GetValue() => {
+    override def perform[V](op: ProduceEff[Unit -> Unit, V])(resume: V => R): R = op match
+    case GetValue() => {
       /* Note: Removing ^{resume} yields the same error as below, but now earlier */
       val leakingInner: Unit ->{resume} Unit = { (_: Unit) =>
         resume((_: Unit) => ())
@@ -37,9 +35,9 @@ lazy object SmuggledHandlerDemo {
   
   var smuggledStorage: Option[MyCap] = None
   
-  def naughtyProgram(): MyCap ?-> Unit = {
+  def naughtyProgram: MyCap ?=> Unit = {
     val handler = summon[MyCap]
-    handler.perform(ProduceOp.GetValue())({ (f: Unit -> Unit) =>
+    handler.perform(GetValue())({ (f: Unit -> Unit) =>
       /* ERROR:
       Note that capability `handler` cannot flow into capture set
       because handler in an enclosing function is not visible from any in variable smuggledStorage.
@@ -55,14 +53,14 @@ lazy object SmuggledHandlerFnDemo {
   
   def naughtyProgram(): ProducerCapability[Unit -> Unit, Unit] ?-> Unit = {
     val handler = summon[ProducerCapability[Unit -> Unit, Unit]]
-    handler.perform(ProduceOp.GetValue())({ (f: Unit -> Unit) =>
+    handler.perform(GetValue())({ (f: Unit -> Unit) =>
       /* ERROR:
       Note that capability `handler` cannot flow into capture set
       because handler in an enclosing function is not visible from any in variable smuggledStorage
       */
       // smuggledStorage = Some(
       //     () => {
-      //         handler.perform(ProduceOp.GetValue(), ???)
+      //         handler.perform(GetValue(), ???)
       //     }
       // )
     })

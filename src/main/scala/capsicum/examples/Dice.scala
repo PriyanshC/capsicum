@@ -4,8 +4,9 @@ import capsicum.core._
 
 sealed trait ProduceEff[A, V] extends Effect[V]
 case class GetValue[A]() extends ProduceEff[A, A]
+type Produce[A] = [V] =>> ProduceEff[A, V]
 
-type Producer[A, R] = Capability[[V] =>> ProduceEff[A, V], R, R]
+type Producer[A, R] = Capability[Produce[A], R, R]
 
 class DiceRoll[R](random: scala.util.Random) extends Producer[Int, R] {
   def roll: (Int => R) => R = perform(GetValue())
