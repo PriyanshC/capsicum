@@ -27,5 +27,5 @@ class ToLoggedHttpHandlerM[R](using http: HttpCapability[R], logging: LoggingCap
       for
         _ <- logging.logMsg("Retrieving fruits..")
         response <- http.get("http://my-fruit-api.com")
-      yield Vector()
+      yield response.split('\n').toVector
 }
