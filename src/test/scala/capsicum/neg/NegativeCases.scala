@@ -58,11 +58,7 @@ lazy object SmuggledHandlerFnDemo {
       Note that capability `handler` cannot flow into capture set
       because handler in an enclosing function is not visible from any in variable smuggledStorage
       */
-      // smuggledStorage = Some(
-      //     () => {
-      //         handler.perform(GetValue(), ???)
-      //     }
-      // )
+      // smuggledStorage = Some(() => handler.perform(GetValue(), ???))
     })
   }
 }
