@@ -48,11 +48,11 @@ lazy object SmuggledHandlerDemo {
 }
 
 lazy object SmuggledHandlerFnDemo {
-  
+  type MyCap = ProducerCapability[Unit -> Unit, Unit]
   var smuggledStorage: Option[() => Unit] = None
   
-  def naughtyProgram(): ProducerCapability[Unit -> Unit, Unit] ?-> Unit = {
-    val handler = summon[ProducerCapability[Unit -> Unit, Unit]]
+  def naughtyProgram(): MyCap ?-> Unit = {
+    val handler = summon[MyCap]
     handler.perform(GetValue())({ (f: Unit -> Unit) =>
       /* ERROR:
       Note that capability `handler` cannot flow into capture set
