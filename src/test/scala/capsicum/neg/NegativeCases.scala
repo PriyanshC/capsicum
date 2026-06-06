@@ -16,7 +16,7 @@ lazy object ContinuationLeakDemo {
     override def perform[V](op: ProduceEff[Unit -> Unit, V])(resume: V => R): R = op match
     case GetValue() => {
       /* Note: Removing ^{resume} yields the same error as below, but now earlier */
-      lazy val leakingInner: Unit ->{resume} Unit = { (_: Unit) =>
+      lazy val leakingInner: Unit => Unit = { _ =>
         println("Unsafe handler invoked!")
         resume(leakingInner)
       }
