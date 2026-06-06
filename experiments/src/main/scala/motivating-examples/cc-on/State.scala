@@ -22,9 +22,17 @@ object StateExKyoCc {
   }
 
   /* Fails on .andThen
-  def setToOne: Unit < Var[Int] = {
-    Var.set[Int](1)
-      .andThen(())
+  def setToOne: Boolean < Var[Int] = Var.set[Int](1).andThen(true)
+  */
+
+  /*
+  Found:    (t1 : Int < kyo.Var[Int])
+  Required: Int < (kyo.Var[Int]^{any})
+  Note that capability `any` cannot flow into capture set {}.
+
+  def anotherFail = {
+     val t1: Int < kyo.Var[Int] = ???
+     val t2: Int < (kyo.Var[Int]^) = t1
   }
   */
 }
