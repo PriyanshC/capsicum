@@ -31,8 +31,8 @@ object TurboliftStreamExCc {
     import turbolift.effects.IO
     import beam.Stream
 
-    val stream: turbolift.Computation[List[Try[String]], IO]^ = DatabaseTracked.withConnection { db =>
-      Stream.from(Seq(1,2,3)).mapEff(x => IO(Try(db.fetchName(x)))).toList
+    val stream = DatabaseTracked.withConnection { db =>
+      Stream.from(Seq(1,2,3)).mapEff(x => IO(db.fetchName(x))).toList
     }
 
     val result = stream.runIO.get
