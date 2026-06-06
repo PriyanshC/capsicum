@@ -14,44 +14,29 @@ trait Effect[V]
 * @tparam R the final return type
 */
 sealed trait BaseCapability[-E <: Effect, -P, R] {
-  def perform[V](eff: E[V], resume: V => P): R^{resume}
+  def perform[V](eff: E[V])(resume: V => P): R^{resume}
   final inline def run(inline prog: this.type ?=> R): R = prog(using this)
 }
 
 trait Capability[-E <: Effect, -P, R] extends BaseCapability[E, P, R] with caps.SharedCapability
 trait UniqueCapability[-E <: Effect, -P, R] extends BaseCapability[E, P, R] with caps.ExclusiveCapability
 
-/**
- * Type alias for a capability where the resumption's return and final return types are the same.
- * @tparam E the effect type
- * @tparam R the uniform type
- */
-type MonoCapability[-E <: Effect, R] = Capability[E, R, R]
-
-trait DirectCap[-E <: Effect, R] {
-  this: MonoCapability[E, R]^ =>
-    protected def apply[V](eff: E[V]): V
-    final override def perform[V](eff: E[V], resume: V => R): R = resume(apply(eff))
+trait OneShot[-E <: Effect, -P, R] {
+  this: BaseCapability[E, P, R]^ =>
+  final override def perform[V](eff: E[V])(resume: V => P): R = handleResult(resume(handleEff(eff)))
+  protected def handleEff[V](eff: E[V]): V
+  protected def handleResult(result: P): R
 }
 
-private sealed trait NullaryEff[-V, V0] extends Effect[V0]
-case class Parameterless[V]() extends NullaryEff[V, V]
-
-type Nullary[-V] = [X] =>> NullaryEff[V, X]
-
-trait NullaryCap[+V, -P, +R] {
-  this: BaseCapability[Nullary[V], P, R]^ =>
-  def perform(resume: V => P): R
-  final override inline def perform[V0](inline eff: NullaryEff[V, V0], inline resume: V0 => P): R = inline eff match {
-    case Parameterless() => perform(resume)
-  }
+trait OneShotKeepResult[-E <: Effect, R] extends OneShot[E, R, R] {
+  this: BaseCapability[E, R, R]^ =>
+  final override def handleResult(result: R): R = result
 }
 
-trait DirectNullaryCap[+V, R] {
-  this: MonoCapability[Nullary[V], R]^ =>
-  protected def apply(): V
-  final override inline def perform[V0](inline eff: NullaryEff[V, V0], inline resume: V0 => R): R = inline eff match
-    case Parameterless() => resume(apply())
+trait Monadic[-E <: Effect, -P, +R] {
+  this: BaseCapability[E, P, R]^ =>
+  final override inline def perform[V](inline eff: E[V])(inline resume: V => P): R = mperform(eff)(resume)
+  def mperform[V](eff: E[V]): (resume: V => P) => R^{resume}
 }
 
 def run[K1 <: BaseCapability[?, ?, R], K2 <: BaseCapability[?, ?, R], R](

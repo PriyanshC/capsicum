@@ -6,12 +6,12 @@ import capsicum.effects._
 sealed trait QueryEff[V] extends Effect[V]
 case class ListFruits() extends QueryEff[Vector[String]]
 
-trait QueryCapability[R] extends MonoCapability[[V] =>> QueryEff[V], R] {
-  final inline def listFruits(inline resume: Vector[String] => R): R = perform(ListFruits(), resume)
+trait QueryCapability[R] extends Capability[[V] =>> QueryEff[V], R, R] {
+  final inline def listFruits(inline resume: Vector[String] => R): R = perform(ListFruits())(resume)
 }
 
 class ToLoggedHttpHandler[R](using http: HttpCapability[R], logging: LoggingCapability[R]) extends QueryCapability[R] {
-  override def perform[V](eff: QueryEff[V], resume: V => R): R = eff match {
+  override def perform[V](eff: QueryEff[V])(resume: V => R): R = eff match {
     case ListFruits() =>
       logging.logMsg("Retrieving fruits...") { _ =>
         http.get("http://my-fruit-api.com") { response =>
@@ -19,4 +19,13 @@ class ToLoggedHttpHandler[R](using http: HttpCapability[R], logging: LoggingCapa
         }
       }
   }
+}
+
+class ToLoggedHttpHandlerM[R](using http: HttpCapability[R], logging: LoggingCapability[R]) extends QueryCapability[R] with Monadic[QueryEff, R, R] {
+  override def mperform[V](eff: QueryEff[V]): (resume: V => R) => R = eff match
+    case ListFruits() =>
+      for
+        _ <- logging.logMsg("Retrieving fruits..")
+        response <- http.get("http://my-fruit-api.com")
+      yield response.split('\n').toVector
 }

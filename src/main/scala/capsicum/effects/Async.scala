@@ -25,25 +25,12 @@ object Fiber {
 }
 
 trait AsyncCapability[R] extends Capability[AsyncEff, R, R] {
-  final inline def fork[T](inline task: () => T)(inline resume: Fiber[T] => R): R = perform(AsyncOp.Fork(task), resume)
-  final inline def join[T](inline fiber: Fiber[T])(inline resume: T => R): R = perform(AsyncOp.Join(fiber), resume)
+  final inline def fork[T](inline task: () => T)(inline resume: Fiber[T] => R): R = perform(AsyncOp.Fork(task))(resume)
+  final inline def join[T](inline fiber: Fiber[T])(inline resume: T => R): R = perform(AsyncOp.Join(fiber))(resume)
 }
 
-class VirtualAsyncHandler[R](using ec: ExecutionContext) extends AsyncCapability[R] {
-  override def perform[V](eff: AsyncEff[V], resume: V => R): R = eff match
-    case f: AsyncOp.Fork[t] => {
-      val promise = Promise[t]()
-      
-      Thread.ofVirtual().start(() => {
-        try {
-          promise.success(f.task())
-        } catch {
-          case e: Throwable => promise.failure(e)
-        }
-      })
-      
-      val fiber = Fiber(promise.future)
-      resume(fiber)
-    }
-    case AsyncOp.Join(fiber) => resume(fiber.get())
+class VirtualAsyncHandler[R](using ec: ExecutionContext) extends AsyncCapability[R] with OneShotKeepResult[AsyncEff, R] {
+  override protected def handleEff[V](eff: AsyncEff[V]): V = eff match
+    case AsyncOp.Fork(task) => Fiber(Future(task()))
+    case AsyncOp.Join(fiber) => fiber.get()
 }
