@@ -28,16 +28,13 @@ object VanillaLazyLeakCc {
 
 object TurboliftStreamExCc {
   @main def runTurboliftStreamExCc(): Unit = {
-    import turbolift.effects.IO
-    import beam.Stream
-
-    def run(ids: Iterable[Int]): List[String] = {
+    def runStream(ids: Iterable[Int]): List[String] = {
       val stream = DatabaseTracked.withConnection { db =>
         beam.Stream.from(ids).mapEff(x => turbolift.effects.IO(db.fetchName(x))).toList
       }
       stream.runIO.get
     }
 
-    println(run(Iterable(1, 2, 3)))
+    println(runStream(Iterable(1, 2, 3)))
   }
 }
