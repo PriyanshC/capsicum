@@ -31,11 +31,13 @@ object TurboliftStreamExCc {
     import turbolift.effects.IO
     import beam.Stream
 
-    val stream = DatabaseTracked.withConnection { db =>
-      Stream.from(Seq(1,2,3)).mapEff(x => IO(db.fetchName(x))).toList
+    def run(ids: Iterable[Int]): List[String] = {
+      val stream = DatabaseTracked.withConnection { db =>
+        beam.Stream.from(ids).mapEff(x => turbolift.effects.IO(db.fetchName(x))).toList
+      }
+      stream.runIO.get
     }
 
-    val result = stream.runIO.get
-    println(result)
+    println(run(Iterable(1, 2, 3)))
   }
 }

@@ -42,10 +42,9 @@ object StateExTurboliftCc {
     import turbolift.!!
     import turbolift.effects.StateEffect
 
-    case object State extends StateEffect[Option[Database]]
-    type State = State.type
+    case object State extends turbolift.effects.StateEffect[Option[Database]]
 
-    def prog: Try[String] !! State = {
+    def prog: Try[String] !! State.type = {
       // Correctly fails to compile this..
       // State.put(DatabaseTracked.withConnection(db => Some(db))) &&!
       State.gets { db =>
