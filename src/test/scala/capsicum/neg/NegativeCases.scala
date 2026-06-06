@@ -16,9 +16,9 @@ lazy object ContinuationLeakDemo {
     override def perform[V](op: ProduceEff[Unit -> Unit, V])(resume: V => R): R = op match
     case GetValue() => {
       /* Note: Removing ^{resume} yields the same error as below, but now earlier */
-      val leakingInner: Unit ->{resume} Unit = { (_: Unit) =>
-        resume((_: Unit) => ())
+      lazy val leakingInner: Unit => Unit = { _ =>
         println("Unsafe handler invoked!")
+        resume(leakingInner)
       }
       
       /* ERROR: Capability `resume` cannot flow into capture set {} */
@@ -58,7 +58,7 @@ lazy object SmuggledHandlerFnDemo {
       Note that capability `handler` cannot flow into capture set
       because handler in an enclosing function is not visible from any in variable smuggledStorage
       */
-      // smuggledStorage = Some(() => handler.perform(GetValue(), ???))
+      // smuggledStorage = Some(() => handler.perform(GetValue())(???))
     })
   }
 }
