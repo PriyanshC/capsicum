@@ -56,3 +56,18 @@ object StateExTurboliftCc {
     println(result)
   }
 }
+
+object StateExTurboliftCcAmend {
+  @main def runStateExTurboliftCcAmend(): Unit = {
+    def prog() = {
+      DatabaseTracked.withConnection { db =>
+        case object State extends turbolift.effects.StateEffect[Option[Database^{db}]]
+        val comp = State.put(Some(db)) &&! State.gets { db => Try(db.get.fetchName(1)) }
+        val result = comp.handleWith(State.handler(None).dropState).run
+        result
+      }
+    }
+
+    println(prog())
+  }
+}
