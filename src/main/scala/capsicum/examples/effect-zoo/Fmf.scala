@@ -7,9 +7,7 @@ import capsicum.effects._
 
 object Fmf {
   def theSeq: Seq[Int] = Seq(1, 5)
-}
 
-object Capsicum {
   def round1 = {
     SafeChainedStream.fromSeq(Fmf.theSeq)
       .filter(_ % 2 == 0)

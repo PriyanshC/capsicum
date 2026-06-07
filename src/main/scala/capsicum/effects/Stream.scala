@@ -8,6 +8,11 @@ import scala.collection.mutable
 sealed trait StreamEff[+T, V] extends Effect[V]
 case class Yield[T](value: T) extends StreamEff[T, Unit]
 
+case class Chunked[T](elements: Array[T]) {
+  inline def map[B: ClassTag](f: T -> B): Chunked[B] = Chunked(elements.map(f))
+  inline def filter(p: T -> Boolean): Chunked[T] = Chunked(elements.filter(p))
+}
+
 trait StreamCap[T, R] extends Capability[[V] =>> StreamEff[T, V], R, R] {
   final def emit(value: T)(resume: Unit => R): R^{resume} = perform(Yield(value))(resume)
 }
