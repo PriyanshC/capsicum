@@ -9,7 +9,6 @@ def parse_benchmark_file(filepath, categories):
     with open(filepath, 'r') as f:
         for line in f:
             line = line.strip()
-            # Skip empty lines or header lines
             if not line.startswith("[info]") or "Mode" in line:
                 continue
             
@@ -17,12 +16,10 @@ def parse_benchmark_file(filepath, categories):
             if len(parts) < 8:
                 continue
                 
-            # parts expected: ['[info]', 'Cdown.CatsCore', 'thrpt', '10', '1129.030', '±', '78.585', 'ops/s']
             name_token = parts[1]
             score = float(parts[4])
             error = float(parts[6])
             
-            # Split Category and Tool
             if '.' not in name_token:
                 continue
             category, rest = name_token.split('.', 1)
@@ -30,7 +27,6 @@ def parse_benchmark_file(filepath, categories):
             if categories is not None and category not in categories:
                 continue
             
-            # Check for rounds (e.g., Fs2__0)
             if '__' in rest:
                 tool, round_str = rest.rsplit('__', 1)
                 round_num = int(round_str)
@@ -38,9 +34,7 @@ def parse_benchmark_file(filepath, categories):
                 tool = rest
                 round_num = 0
                 
-            # Escape underscores in the tool name so LaTeX doesn't parse them as math subscripts
             tool_latex = tool.replace('_', '\\_')
-            
             data[category][tool_latex][round_num] = (score, error)
             
     return data
@@ -49,77 +43,110 @@ def generate_latex(data):
     latex_out = [
         "\\documentclass{article}",
         "\\usepackage{pgfplots}",
+        "\\usepackage{graphicx}",
+        "\\usepackage{xcolor}",
+        "\\usepackage[margin=1in]{geometry}",
         "\\pgfplotsset{compat=1.18}",
+        "",
+        "% Custom palette extracted from user image",
+        "\\definecolor{imgblue}{HTML}{4F81BD}",
+        "\\definecolor{imgteal}{HTML}{65B3B3}",
+        "\\definecolor{imggreen}{HTML}{9EBC59}",
+        "\\definecolor{imgorange}{HTML}{E89D4F}",
+        "\\definecolor{imgslate}{HTML}{45455E}",
+        "\\definecolor{imgred}{HTML}{B95858}",
         "\\begin{document}\n"
     ]
     
-    # Sort categories alphabetically
-    for category in sorted(data.keys()):
+    latex_out.append("\\begin{figure}[!htbp]")
+    latex_out.append("\\centering")
+    
+    categories = sorted(data.keys())
+    num_categories = len(categories)
+    
+    for i, category in enumerate(categories):
         tools = data[category]
-        # Sort tools alphabetically for the y-axis
         sorted_tools = sorted(tools.keys())
         symbolic_coords = ", ".join(sorted_tools)
         
-        # Determine the maximum number of rounds in this specific category
         max_rounds = max([max(rounds.keys()) for rounds in tools.values()]) + 1
-        y_spacing = (max_rounds * 0.3) + 0.4
         
+        # CHANGED: Caps the maximum width so single graphs don't become massive
+        width_fraction = min(0.95 / num_categories, 0.45)
         
-        latex_out.append("\\begin{figure}[htbp]")
-        latex_out.append("\\centering")
-        latex_out.append("\\begin{tikzpicture}")
-        latex_out.append("\\begin{axis}[")
-        latex_out.append("    xbar,")
-        latex_out.append("    y dir=reverse, % Forces A to top, Z to bottom")
-        latex_out.append(f"    title={{{category}}},")
-        latex_out.append("    xlabel={Throughput (ops/s)},")
-        latex_out.append(f"    symbolic y coords={{{symbolic_coords}}},")
-        latex_out.append("    ytick=data,")
-        latex_out.append("    enlarge y limits=0.05,")
-        latex_out.append("    width=0.75\\textwidth,")
-        latex_out.append("    scaled x ticks=false,")
-        latex_out.append("    tick label style={/pgf/number format/fixed},")
-        latex_out.append("    bar width=4pt,")
-        latex_out.append("    y=0.6cm, % Sets exact distance between each tool")
-        latex_out.append(f"    y={y_spacing}cm,")
-        latex_out.append("    bar width=0.3cm,")
-        latex_out.append("    enlarge y limits={abs=0.6cm},")
+        latex_out.append(f"\\begin{{minipage}}[b]{{{width_fraction:.2f}\\textwidth}}")
+        latex_out.append("  \\centering")
+        latex_out.append("  \\resizebox{\\textwidth}{!}{%")
+        latex_out.append("  \\begin{tikzpicture}")
+        latex_out.append("  \\begin{axis}[")
+        latex_out.append("      ybar,")
+        latex_out.append(f"      title={{{category}}},")
+        latex_out.append("      ylabel={Throughput (ops/s)},")
+        latex_out.append(f"      symbolic x coords={{{symbolic_coords}}},")
+        latex_out.append("      xtick=data,")
+        latex_out.append("      x tick label style={rotate=90, anchor=east, font=\\Large, text width=4.5cm, align=right},") 
+        latex_out.append("      enlarge x limits={abs=0.8cm},")
+        latex_out.append("      ymin=0,")
+        latex_out.append("      width=12cm,")
+        latex_out.append("      height=16cm,") 
+        latex_out.append("      scaled y ticks=false,")
+        latex_out.append("      y tick label style={/pgf/number format/fixed, font=\\large, text width=2cm, align=right},")
+        latex_out.append("      bar width=8pt,") 
         
         if max_rounds > 1:
-            latex_out.append("    legend pos=south east,")
-            latex_out.append("    area legend,")
-            latex_out.append("    reverse legend, % ADD THIS: Fixes the legend order")
+            latex_out.append("      legend pos=north east,")
+            latex_out.append("      legend style={font=\\large},")
+            latex_out.append("      area legend,")
             
-        latex_out.append("]")
+        latex_out.append("  ]")
         
-        # Generate an \addplot for every round
-        for r in reversed(range(max_rounds)):
+        for r in range(max_rounds):
+            if max_rounds == 1:
+                color_options = "fill=imgblue, draw=imgblue!70!black"
+            else:
+                palette = [
+                    "fill=imgteal, draw=imgteal!70!black",
+                    "fill=imggreen, draw=imggreen!70!black",
+                    "fill=imgorange, draw=imgorange!70!black",
+                    "fill=imgslate, draw=imgslate!70!black",
+                    "fill=imgred, draw=imgred!70!black"
+                ]
+                color_options = palette[r % len(palette)]
+
             plot_lines = [
-                "\\addplot+[",
-                "    error bars/.cd,",
-                "        x dir=both,",
-                "        x explicit",
-                "] coordinates {"
+                "  \\addplot+[",
+                f"      {color_options},", 
+                "      error bars/.cd,",
+                "          y dir=both,",
+                "          y explicit",
+                "  ] coordinates {"
             ]
             
             has_data = False
             for tool in sorted_tools:
                 if r in tools[tool]:
                     score, error = tools[tool][r]
-                    plot_lines.append(f"    ({score:.3f},{tool}) +- ({error:.3f},0)")
+                    plot_lines.append(f"      ({tool},{score:.3f}) +- (0,{error:.3f})")
                     has_data = True
                     
-            plot_lines.append("};")
+            plot_lines.append("  };")
             if max_rounds > 1:
-                plot_lines.append(f"\\addlegendentry{{Round {r}}}")
+                plot_lines.append(f"  \\addlegendentry{{Round {r}}}")
                 
             if has_data:
                 latex_out.extend(plot_lines)
                 
-        latex_out.append("\\end{axis}")
-        latex_out.append("\\end{tikzpicture}")
-        latex_out.append(f"\\caption{{Throughput comparison of the {category} benchmark. Higher is better.}}")
-        latex_out.append("\\end{figure}\n")
+        latex_out.append("  \\end{axis}")
+        latex_out.append("  \\end{tikzpicture}%")
+        latex_out.append("  }") 
+        latex_out.append("\\end{minipage}")
+        
+        if i < num_categories - 1:
+            latex_out.append("\\hfill")
+            
+    latex_out.append("\\vspace{0.5cm}")
+    latex_out.append("\\caption{Throughput comparison of benchmarks. Higher is better.}")
+    latex_out.append("\\end{figure}\n")
         
     latex_out.append("\\end{document}")
     
