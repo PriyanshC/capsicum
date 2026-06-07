@@ -259,13 +259,15 @@ object Demo {
       .collectChunks
   }
 
-  def demoMismatchedCleaner(theSeq: Seq[Int]) = {
-    // Stream.collect { 
-    //   Stream.map[Char, Int, Unit](_ + 1) { 
-    //     Stream.filter[Int, Unit](_ % 2 == 0) {
-    //       Stream.fromSeq(theSeq)(_ => ???)
-    //     }
-    //   }
-    // }
+  def demoMismatchedCleaner(theSeq: Seq[Int]): Seq[Int] = {
+    val endOfStream = (sink: SinkHandler[Int, Id]) ?=> sink.collect
+
+    Stream.collect[Int] { 
+      Stream.map[Char, Int, Id[Seq[Int]]](_ + 1) { 
+        Stream.filter[Int, Id[Seq[Int]]](_ % 2 == 0) {
+          Stream.fromSeq(theSeq)(_ => endOfStream)
+        }
+      }
+    }
   }
 }
