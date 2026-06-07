@@ -39,6 +39,27 @@ class FoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCa
   def acc: S = current
 }
 
+class ChunkedMapHandler[A, B: ClassTag, R](f: A -> B)(out: StreamCap[Chunked[B], R]) extends StreamCap[Chunked[A], R] {
+  override inline def perform[V](eff: StreamEff[Chunked[A], V])(resume: V => R): R^{resume} = eff match
+    case Yield(chunk) => out.emit(chunk.map(f))(resume)
+}
+
+class ChunkedFilterHandler[A, R](p: A -> Boolean)(out: StreamCap[Chunked[A], R]) extends StreamCap[Chunked[A], R] {
+  override inline def perform[V](eff: StreamEff[Chunked[A], V])(resume: V => R): R^{resume} = eff match
+    case Yield(chunk) => 
+      val filtered = chunk.filter(p)
+      if (filtered.elements.isEmpty) resume(()) else out.emit(filtered)(resume)
+}
+
+class ChunkedFoldHandler[T, S](private var current: S)(f: (S, Chunked[T]) -> S) extends StreamCap[Chunked[T], S] {
+  override inline def perform[V](eff: StreamEff[Chunked[T], V])(resume: V => S): S^{resume} = eff match
+    case Yield(chunk) => 
+      current = f(current, chunk)
+      resume(())
+  
+  def acc: S = current
+}
+
 class SinkHandler[T] extends StreamCap[T, Unit] {
   private var sink: mutable.Buffer[T] = mutable.Buffer.empty
   override def perform[V](eff: StreamEff[T, V])(resume: V => Unit): Unit = eff match
@@ -148,7 +169,6 @@ object Stream {
     sink.collect
   }
 
-  // TODO this is the weird pattern again
   inline def fromSeq[T, R](seqq: Seq[T], resume: Unit => R)(using s: StreamCap[T, R]): R = {
     def loop(seq: Seq[T]): R = if (seq.isEmpty) resume(()) else s.emit(seq.head)(_ => loop(seq.tail))
     loop(seqq)
@@ -162,6 +182,29 @@ object Stream {
       else s.emit(seq.head)(_ => suspend(loop(seq.tail)).asInstanceOf[Bounce[R]]) // TODO cast bad
     }
     loop(seqq)
+  }
+
+  inline def mapChunked[A, B: ClassTag, R](inline f: A -> B)(prog: ChunkedMapHandler[A, B, R] ?=> R)(using inline out: StreamCap[Chunked[B], R]): R = {
+    val mapper = new ChunkedMapHandler[A, B, R](f)(out)
+    mapper.run(prog)
+  }
+
+  inline def filterChunked[A, R](inline p: A -> Boolean)(prog: ChunkedFilterHandler[A, R] ?=> R)(using inline out: StreamCap[Chunked[A], R]): R = {
+    val filterer = new ChunkedFilterHandler[A, R](p)(out)
+    filterer.run(prog)
+  }
+
+  inline def foldChunked[T, S](inline base: S)(inline f: (S, Chunked[T]) -> S)(prog: ChunkedFoldHandler[T, S] ?=> S): S = {
+    val folder = new ChunkedFoldHandler[T, S](base)(f)
+    folder.run(prog)
+  }
+
+  inline def fromSeqChunked[T: ClassTag, R](seq: Seq[T], chunkSize: Int, resume: Unit => R)(using s: StreamCap[Chunked[T], R]): R = {
+    val chunks = seq.grouped(chunkSize).map(arr => Chunked(arr.toArray)).toSeq 
+    def loop(cs: Seq[Chunked[T]]): R = 
+      if (cs.isEmpty) resume(()) 
+      else s.emit(cs.head)(_ => loop(cs.tail))
+    loop(chunks)
   }
 }
 
@@ -200,6 +243,39 @@ object ChainedStream {
       Stream.fromSeq(seq, finish)
   }
 }
+
+trait ChunkedChainedStream[A: ClassTag] {
+  def build[R](finish: Unit => R)(using out: StreamCap[Chunked[A], R]): R^{finish, out}
+
+  def map[B: ClassTag](f: A -> B): ChunkedChainedStream[B]^{this} = {
+    val prev = this
+    new ChunkedChainedStream[B] {
+      def build[R](finish: Unit => R)(using out: StreamCap[Chunked[B], R]): R^{finish, out} =
+        Stream.mapChunked(f)(prev.build(finish))
+    }
+  }
+
+  def filter(p: A -> Boolean): ChunkedChainedStream[A]^{this} = {
+    val prev = this
+    new ChunkedChainedStream[A] {
+      def build[R](finish: Unit => R)(using out: StreamCap[Chunked[A], R]): R^{finish, out} =
+        Stream.filterChunked(p)(prev.build(finish))
+    }
+  }
+
+  def foldChunks[S](base: S)(f: (S, Chunked[A]) -> S): S =
+    Stream.foldChunked(base)(f) { folder ?=>
+      this.build(_ => folder.acc)
+    }
+}
+
+object ChunkedChainedStream {
+  def fromSeq[T: ClassTag](seq: Seq[T], chunkSize: Int = 4096): ChunkedChainedStream[T] = new ChunkedChainedStream[T] {
+    def build[R](finish: Unit => R)(using cap: StreamCap[Chunked[T], R]): R^{finish, cap} =
+      Stream.fromSeqChunked(seq, chunkSize, finish)
+  }
+}
+
 
 trait SafeChainedStream[A] {
   def build[R](finish: Unit => Bounce[R])(using out: StreamCap[A, Bounce[R]]): Bounce[R]^{finish, out}
@@ -245,15 +321,6 @@ trait SafeChainedStream[A] {
   }
 }
 
-/***
- * {
-      def loop(currentSeq: Seq[T]): Bounce[R]^{finish, cap} = {
-        if (currentSeq.isEmpty) suspend(finish(()))
-        else cap.emit(currentSeq.head, _ => suspend(loop(currentSeq.tail)))
-      }
-      loop(seq)
-    }
- */
 object SafeChainedStream {
   def fromSeq[T](seq: Seq[T]): SafeChainedStream[T] = new SafeChainedStream[T] {
     def build[R](finish: Unit => Bounce[R])(using cap: StreamCap[T, Bounce[R]]): Bounce[R]^{finish, cap} = {
