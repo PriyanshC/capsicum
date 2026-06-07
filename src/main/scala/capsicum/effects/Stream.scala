@@ -8,11 +8,6 @@ import scala.collection.mutable
 sealed trait StreamEff[+T, V] extends Effect[V]
 case class Yield[T](value: T) extends StreamEff[T, Unit]
 
-case class Chunked[T](elements: Array[T]) {
-  inline def map[B: ClassTag](f: T -> B): Chunked[B] = Chunked(elements.map(f))
-  inline def filter(p: T -> Boolean): Chunked[T] = Chunked(elements.filter(p))
-}
-
 trait StreamCap[T, R] extends Capability[[V] =>> StreamEff[T, V], R, R] {
   final def emit(value: T)(resume: Unit => R): R^{resume} = perform(Yield(value))(resume)
 }
@@ -38,6 +33,12 @@ class FoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends StreamCa
   
   def acc: S = current
 }
+
+case class Chunked[T](val elements: Array[T]) {
+  inline def map[B: ClassTag](f: T -> B): Chunked[B] = Chunked(elements.map(f))
+  inline def filter(p: T -> Boolean): Chunked[T] = Chunked(elements.filter(p))
+}
+
 
 class ChunkedMapHandler[A, B: ClassTag, R](f: A -> B)(out: StreamCap[Chunked[B], R]) extends StreamCap[Chunked[A], R] {
   override inline def perform[V](eff: StreamEff[Chunked[A], V])(resume: V => R): R^{resume} = eff match
@@ -107,30 +108,6 @@ class SafeFoldHandler[T, S](private var current: S)(f: (S, T) -> S) extends Stre
   def acc: S = current
 }
 
-
-class SafeBatchedFoldHandler[T: ClassTag, S](private var current: S, batchSize: Int)(f: (S, Array[T]) -> S) extends StreamCap[T, Bounce[S]] {
-  private val buf = new Array[T](batchSize)
-  private var pos = 0
-
-  override def perform[V](eff: StreamEff[T, V])(resume: V => Bounce[S]): Bounce[S]^{resume} = eff match {
-    case Yield(v) => 
-      buf(pos) = v
-      pos += 1
-      if (pos == batchSize) {
-        current = f(current, buf.clone())
-        pos = 0
-      }
-      suspend(resume(()))
-  }
-  
-  def flush(): S = {
-    if (pos > 0) {
-      current = f(current, buf.slice(0, pos))
-    }
-    current
-  }
-}
-
 class SafeSinkHandler[T] extends StreamCap[T, Bounce[Seq[T]]] {
   private var sink: mutable.Buffer[T] = mutable.Buffer.empty
   
@@ -146,6 +123,32 @@ class SafeSinkHandler[T] extends StreamCap[T, Bounce[Seq[T]]] {
     res
   }
 }
+
+class SafeChunkedFoldHandler[T, S](private var current: S)(f: (S, Chunked[T]) -> S) extends StreamCap[Chunked[T], Bounce[S]] {
+  override def perform[V](eff: StreamEff[Chunked[T], V])(resume: V => Bounce[S]): Bounce[S]^{resume} = eff match {
+    case Yield(chunk) => 
+      current = f(current, chunk)
+      suspend(resume(()))
+  }
+  def acc: S = current
+}
+
+class SafeChunkedSinkHandler[T] extends StreamCap[Chunked[T], Bounce[Seq[T]]] {
+  private var sink: mutable.Buffer[T] = mutable.Buffer.empty
+  
+  override def perform[V](eff: StreamEff[Chunked[T], V])(resume: V => Bounce[Seq[T]]): Bounce[Seq[T]]^{resume} = eff match {
+    case Yield(chunk) => 
+      sink ++= chunk.elements 
+      suspend(resume(()))
+  }
+
+  def collect: Seq[T] = {
+    val res = sink.toVector
+    sink = mutable.Buffer.empty
+    res
+  }
+}
+
 
 object Stream {
   inline def map[A, B, R](inline f: A -> B)(prog: MapHandler[A, B, R] ?=> R)(using inline out: StreamCap[B, R]): R = {
@@ -205,6 +208,26 @@ object Stream {
       if (cs.isEmpty) resume(()) 
       else s.emit(cs.head)(_ => loop(cs.tail))
     loop(chunks)
+  }
+
+  def fromSeqChunkedSafe[T: ClassTag, R](seq: Seq[T], chunkSize: Int, resume: Unit => Bounce[R])(using s: StreamCap[Chunked[T], Bounce[R]]): Bounce[R]^{resume, s} = {
+    val chunks = seq.grouped(chunkSize).map(arr => Chunked(arr.toArray)).toSeq
+    def loop(cs: Seq[Chunked[T]]): Bounce[R]^{resume, s} = {
+      if (cs.isEmpty) suspend(resume(()))
+      else s.emit(cs.head)(_ => suspend(loop(cs.tail)).asInstanceOf[Bounce[R]])
+    }
+    loop(chunks)
+  }
+
+  def fromPrechunkedSafe[T: ClassTag, R](
+      chunkedSeq: Seq[Array[T]], 
+      resume: Unit => Bounce[R]
+  )(using s: StreamCap[Chunked[T], Bounce[R]]): Bounce[R]^{resume, s} = {
+    def loop(cs: Seq[Array[T]]): Bounce[R]^{resume, s} = {
+      if (cs.isEmpty) suspend(resume(()))
+      else s.emit(Chunked(cs.head))(_ => suspend(loop(cs.tail)).asInstanceOf[Bounce[R]])
+    }
+    loop(chunkedSeq)
   }
 }
 
@@ -311,20 +334,61 @@ trait SafeChainedStream[A] {
     }
     bounce.eval
   }
-
-  def batchedFold[S](base: S, batchSize: Int = 4096)(f: (S, Array[A]) -> S)(using ClassTag[A]): S = {
-    val folder = new SafeBatchedFoldHandler[A, S](base, batchSize)(f)
-    val bounce = folder.run {
-      this.build(_ => result(folder.flush()))
-    }
-    bounce.eval
-  }
 }
 
 object SafeChainedStream {
   def fromSeq[T](seq: Seq[T]): SafeChainedStream[T] = new SafeChainedStream[T] {
     def build[R](finish: Unit => Bounce[R])(using cap: StreamCap[T, Bounce[R]]): Bounce[R]^{finish, cap} = {
       Stream.fromSeqSafe(seq, finish)
+    }
+  }
+}
+
+trait SafeChunkedChainedStream[A: ClassTag] {
+  def build[R](finish: Unit => Bounce[R])(using out: StreamCap[Chunked[A], Bounce[R]]): Bounce[R]^{finish, out}
+
+  def map[B: ClassTag](f: A -> B): SafeChunkedChainedStream[B]^{this} = {
+    val prev = this
+    new SafeChunkedChainedStream[B] {
+      def build[R](finish: Unit => Bounce[R])(using out: StreamCap[Chunked[B], Bounce[R]]): Bounce[R]^{finish, out} =
+        Stream.mapChunked(f)(prev.build(finish))
+    }
+  }
+
+  def filter(p: A -> Boolean): SafeChunkedChainedStream[A]^{this} = {
+    val prev = this
+    new SafeChunkedChainedStream[A] {
+      def build[R](finish: Unit => Bounce[R])(using out: StreamCap[Chunked[A], Bounce[R]]): Bounce[R]^{finish, out} =
+        Stream.filterChunked(p)(prev.build(finish))(using out)
+    }
+  }
+
+  def foldChunks[S](base: S)(f: (S, Chunked[A]) -> S): S = {
+    val folder = new SafeChunkedFoldHandler[A, S](base)(f)
+    val bounce = folder.run {
+      this.build(_ => result(folder.acc))
+    }
+    bounce.eval
+  }
+
+  def collect: Seq[A] = {
+    val sink = new SafeChunkedSinkHandler[A]
+    val bounce = sink.run {
+      this.build(_ => result(sink.collect))
+    }
+    bounce.eval
+  }
+}
+
+object SafeChunkedChainedStream {
+  def fromSeq[T: ClassTag](seq: Seq[T], chunkSize: Int = 4096): SafeChunkedChainedStream[T] = new SafeChunkedChainedStream[T] {
+    def build[R](finish: Unit => Bounce[R])(using cap: StreamCap[Chunked[T], Bounce[R]]): Bounce[R]^{finish, cap} = {
+      Stream.fromSeqChunkedSafe(seq, chunkSize, finish)
+    }
+  }
+  def fromPrechunked[T: ClassTag](chunkedSeq: Seq[Array[T]]): SafeChunkedChainedStream[T] = new SafeChunkedChainedStream[T] {
+    def build[R](finish: Unit => Bounce[R])(using cap: StreamCap[Chunked[T], Bounce[R]]): Bounce[R]^{finish, cap} = {
+      Stream.fromPrechunkedSafe(chunkedSeq, finish)
     }
   }
 }
