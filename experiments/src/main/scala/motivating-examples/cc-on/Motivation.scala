@@ -42,7 +42,11 @@ object DatabaserSeq {
     result
   }
 
-  def deferFetchAllDirect(ids: Seq[Int]): () => Seq[String] = {
-    Database.withConnection { db => () => ids.map(db.fetchName) }
+  def deferFetchAllDirect(ids: Seq[Int]): Seq[String] = {
+    DatabaseTracked.withConnection { db => ids.map(db.fetchName) }
+  }
+
+  def run() = {
+    val names = deferFetchAllDirect(LazyList(1, 10, 100))
   }
 }
