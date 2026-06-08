@@ -12,6 +12,11 @@ trait StreamCap[T, R] extends Capability[[V] =>> StreamEff[T, V], R, R] {
   final def emit(value: T)(resume: Unit => R): R^{resume} = perform(Yield(value))(resume)
 }
 
+class NullSinkHandler[T, R] extends StreamCap[T, R] {
+  override def perform[V](eff: StreamEff[T, V])(resume: V => R): R = eff match
+    case Yield(_) => resume(())
+}
+
 trait StreamEval[W[_]] {
   def suspend[A](thunk: W[A]): W[A]
   def pure[A](a: A): W[A]
