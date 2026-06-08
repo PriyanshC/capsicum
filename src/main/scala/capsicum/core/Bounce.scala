@@ -15,3 +15,5 @@ inline def result[A](x: A): Bounce[A] = Chunk(x)
 
 private final class Chunk[A](val x: A) extends Bounce[A]
 private final class Thunk[A](val cont: () => Bounce[A]^) extends Bounce[A]
+
+type Id[T] = T
