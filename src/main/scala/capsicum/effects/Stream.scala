@@ -89,18 +89,16 @@ trait Flow[A, W[_]] {
         Stream.filter(p)(prev.build(finish))
     }
   }
-}
 
-extension [A, W[_]](flow: Flow[A, W])(using W: StreamEval[W]) {
-  def fold[S](base: S)(f: (S, A) -> S): S = {
+  def fold[S](base: S)(f: (S, A) -> S)(using W: StreamEval[W]): S = {
     val folder = new FoldHandler[A, S, W](base)(f)
-    val wrapped = folder.run(flow.build[S](_ => W.pure(folder.acc))(using folder))
+    val wrapped = folder.run(build[S](_ => W.pure(folder.acc))(using folder))
     W.eval(wrapped)
   }
 
-  def collect: Seq[A] = {
+  def collect(using W: StreamEval[W]): Seq[A] = {
     val sink = new SinkHandler[A, W]
-    val wrapped = sink.run(flow.build[Seq[A]](_ => W.pure(sink.collect))(using sink))
+    val wrapped = sink.run(build[Seq[A]](_ => W.pure(sink.collect))(using sink))
     W.eval(wrapped)
   }
 }
