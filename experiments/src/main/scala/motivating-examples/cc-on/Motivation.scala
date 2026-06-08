@@ -32,3 +32,17 @@ object DatabaseExample {
     println(scala.util.Try(names.toList))
   }
 }
+
+object DatabaserSeq {
+  def openConnection(): Database = ??? // Some implementation
+  def withConnection[A](logic: Database => A): A = {
+    val db: Database = Database.openConnection()
+    val result = logic(db)
+    db.close()
+    result
+  }
+
+  def deferFetchAllDirect(ids: Seq[Int]): () => Seq[String] = {
+    Database.withConnection { db => () => ids.map(db.fetchName) }
+  }
+}
