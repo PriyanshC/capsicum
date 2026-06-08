@@ -145,7 +145,8 @@ def generate_latex(data):
             latex_out.append("\\hfill")
             
     latex_out.append("\\vspace{0.5cm}")
-    latex_out.append("\\caption{Throughput comparison of benchmarks. Higher is better.}")
+    latex_out.append(f"\\caption{{Throughput comparison of benchmarks {", ".join(categories)}}}")
+    latex_out.append(f"\\label{{eval:{"_".join(categories).lower()}}}")
     latex_out.append("\\end{figure}\n")
         
     latex_out.append("\\end{document}")
