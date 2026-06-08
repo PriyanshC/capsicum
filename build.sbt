@@ -4,7 +4,7 @@ ThisBuild / javacOptions ++= Seq("-source", "21", "-target", "21")
 
 ThisBuild / scalacOptions ++= {
   if (sys.env.contains("CC_DEBUG")) Seq("-Ycc-debug") else Seq.empty
-} ++ Seq("-explain", "-Wimplausible-patterns", "-release", "21")
+} ++ Seq("-explain", "-Wimplausible-patterns", "-release", "21", "-experimental")
 
 
 lazy val root = (project in file("."))
