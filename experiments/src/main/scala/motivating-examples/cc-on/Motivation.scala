@@ -32,3 +32,22 @@ object DatabaseExample {
     println(scala.util.Try(names.toList))
   }
 }
+
+object DatabaserSeq {
+  def openConnection(): Database = ??? // Some implementation
+  def withConnection[A](logic: Database => A): A = {
+    val db: Database = Database.openConnection()
+    val result = logic(db)
+    db.close()
+    result
+  }
+
+  def fetchAllSeq(ids: Seq[Int]): Seq[String] = {
+    DatabaseTracked.withConnection { db => ids.map(db.fetchName) }
+  }
+
+  @main def runLazy() = {
+    val names = fetchAllSeq(LazyList(1, 10, 100))
+    names.toList
+  }
+}
