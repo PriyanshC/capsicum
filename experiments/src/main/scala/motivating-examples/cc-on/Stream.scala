@@ -30,7 +30,7 @@ object TurboliftStreamExCc {
   @main def runTurboliftStreamExCc(): Unit = {
     def runStream(ids: Iterable[Int]): List[String] = {
       val stream = DatabaseTracked.withConnection { db =>
-        beam.Stream.from(ids).mapEff(x => turbolift.effects.IO(db.fetchName(x))).toList
+        beam.Stream.from(ids).mapEff(x => turbolift.effects.IO(x.toString)).toList // db.fetchName(x)
       }
       stream.runIO.get
     }
