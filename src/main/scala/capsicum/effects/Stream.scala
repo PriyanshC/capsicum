@@ -203,7 +203,7 @@ object Demo {
         val filterer = new FilterHandler[Int, Int](_ % 2 == 0)(mapper)
         
         filterer.run {
-          def loop(seq: Seq[Int]): Id[Int] = 
+          def loop(seq: Seq[Int]): Int = 
             if (seq.isEmpty) folder.acc else filterer.emit(seq.head)(_ => loop(seq.tail))
           loop(theSeq)
         }
