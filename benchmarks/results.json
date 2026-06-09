@@ -1,0 +1,358 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "capsicum.benchmarks.NQueensBenchmark.capsicumNQueens",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/home/pc/.cache/coursier/arc/https/github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.10%252B7/OpenJDK21U-jdk_x64_linux_hotspot_21.0.10_7.tar.gz/jdk-21.0.10+7/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "21.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "21.0.10+7-LTS",
+        "warmupIterations" : 10,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 10,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "n" : "8"
+        },
+        "primaryMetric" : {
+            "score" : 1.8349924477039479,
+            "scoreError" : 0.0568145842314572,
+            "scoreConfidence" : [
+                1.7781778634724907,
+                1.891807031935405
+            ],
+            "scorePercentiles" : {
+                "0.0" : 1.8015517320143886,
+                "50.0" : 1.818921687876178,
+                "90.0" : 1.9092919259414045,
+                "95.0" : 1.912842447418738,
+                "99.0" : 1.912842447418738,
+                "99.9" : 1.912842447418738,
+                "99.99" : 1.912842447418738,
+                "99.999" : 1.912842447418738,
+                "99.9999" : 1.912842447418738,
+                "100.0" : 1.912842447418738
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    1.8669349235074626,
+                    1.8015517320143886,
+                    1.8159059039855072,
+                    1.8085127653429602,
+                    1.8279268832116788,
+                    1.8121416721014494,
+                    1.8219374717668488,
+                    1.804833445045045,
+                    1.8773372326454034,
+                    1.912842447418738
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "capsicum.benchmarks.NQueensBenchmark.capsicumNQueens",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/home/pc/.cache/coursier/arc/https/github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.10%252B7/OpenJDK21U-jdk_x64_linux_hotspot_21.0.10_7.tar.gz/jdk-21.0.10+7/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "21.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "21.0.10+7-LTS",
+        "warmupIterations" : 10,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 10,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "n" : "10"
+        },
+        "primaryMetric" : {
+            "score" : 50.308095339999994,
+            "scoreError" : 0.230905382380758,
+            "scoreConfidence" : [
+                50.07718995761924,
+                50.53900072238075
+            ],
+            "scorePercentiles" : {
+                "0.0" : 50.0610192,
+                "50.0" : 50.310142475,
+                "90.0" : 50.568754665,
+                "95.0" : 50.5803323,
+                "99.0" : 50.5803323,
+                "99.9" : 50.5803323,
+                "99.99" : 50.5803323,
+                "99.999" : 50.5803323,
+                "99.9999" : 50.5803323,
+                "100.0" : 50.5803323
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    50.3208993,
+                    50.29938565,
+                    50.17091185,
+                    50.24057005,
+                    50.5803323,
+                    50.1829712,
+                    50.46455595,
+                    50.3980117,
+                    50.3622962,
+                    50.0610192
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "capsicum.benchmarks.NQueensBenchmark.capsicumNQueens",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/home/pc/.cache/coursier/arc/https/github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.10%252B7/OpenJDK21U-jdk_x64_linux_hotspot_21.0.10_7.tar.gz/jdk-21.0.10+7/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "21.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "21.0.10+7-LTS",
+        "warmupIterations" : 10,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 10,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "n" : "12"
+        },
+        "primaryMetric" : {
+            "score" : 1518.3847559,
+            "scoreError" : 19.470812573111438,
+            "scoreConfidence" : [
+                1498.9139433268886,
+                1537.8555684731116
+            ],
+            "scorePercentiles" : {
+                "0.0" : 1506.631866,
+                "50.0" : 1515.4549795,
+                "90.0" : 1548.9049807,
+                "95.0" : 1551.180011,
+                "99.0" : 1551.180011,
+                "99.9" : 1551.180011,
+                "99.99" : 1551.180011,
+                "99.999" : 1551.180011,
+                "99.9999" : 1551.180011,
+                "100.0" : 1551.180011
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    1551.180011,
+                    1528.429708,
+                    1512.987177,
+                    1510.996956,
+                    1515.94504,
+                    1506.631866,
+                    1516.299281,
+                    1514.964919,
+                    1510.135991,
+                    1516.27661
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "capsicum.benchmarks.NQueensBenchmark.vanillaNQueens",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/home/pc/.cache/coursier/arc/https/github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.10%252B7/OpenJDK21U-jdk_x64_linux_hotspot_21.0.10_7.tar.gz/jdk-21.0.10+7/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "21.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "21.0.10+7-LTS",
+        "warmupIterations" : 10,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 10,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "n" : "8"
+        },
+        "primaryMetric" : {
+            "score" : 1.6789004548966346,
+            "scoreError" : 0.0101884264825549,
+            "scoreConfidence" : [
+                1.6687120284140797,
+                1.6890888813791896
+            ],
+            "scorePercentiles" : {
+                "0.0" : 1.6706970951585978,
+                "50.0" : 1.6765459137353433,
+                "90.0" : 1.6916534630391757,
+                "95.0" : 1.6922354695945947,
+                "99.0" : 1.6922354695945947,
+                "99.9" : 1.6922354695945947,
+                "99.99" : 1.6922354695945947,
+                "99.999" : 1.6922354695945947,
+                "99.9999" : 1.6922354695945947,
+                "100.0" : 1.6922354695945947
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    1.6706970951585978,
+                    1.6847526296296296,
+                    1.6769543969849245,
+                    1.6742423595317726,
+                    1.674633550167224,
+                    1.674262414715719,
+                    1.686415404040404,
+                    1.678673798657718,
+                    1.6922354695945947,
+                    1.6761374304857621
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "capsicum.benchmarks.NQueensBenchmark.vanillaNQueens",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/home/pc/.cache/coursier/arc/https/github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.10%252B7/OpenJDK21U-jdk_x64_linux_hotspot_21.0.10_7.tar.gz/jdk-21.0.10+7/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "21.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "21.0.10+7-LTS",
+        "warmupIterations" : 10,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 10,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "n" : "10"
+        },
+        "primaryMetric" : {
+            "score" : 70.91891767619047,
+            "scoreError" : 0.43926137710166374,
+            "scoreConfidence" : [
+                70.47965629908882,
+                71.35817905329213
+            ],
+            "scorePercentiles" : {
+                "0.0" : 70.52294233333333,
+                "50.0" : 70.8217488,
+                "90.0" : 71.50566399904761,
+                "95.0" : 71.54736542857142,
+                "99.0" : 71.54736542857142,
+                "99.9" : 71.54736542857142,
+                "99.99" : 71.54736542857142,
+                "99.999" : 71.54736542857142,
+                "99.9999" : 71.54736542857142,
+                "100.0" : 71.54736542857142
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    71.06907386666667,
+                    71.54736542857142,
+                    70.7639084,
+                    70.7537486,
+                    71.13035113333333,
+                    70.82907166666666,
+                    70.81442593333334,
+                    71.06256506666666,
+                    70.69572433333333,
+                    70.52294233333333
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "capsicum.benchmarks.NQueensBenchmark.vanillaNQueens",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/home/pc/.cache/coursier/arc/https/github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.10%252B7/OpenJDK21U-jdk_x64_linux_hotspot_21.0.10_7.tar.gz/jdk-21.0.10+7/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "21.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "21.0.10+7-LTS",
+        "warmupIterations" : 10,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 10,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "n" : "12"
+        },
+        "primaryMetric" : {
+            "score" : 1770.2695250000002,
+            "scoreError" : 6.068418478352217,
+            "scoreConfidence" : [
+                1764.201106521648,
+                1776.3379434783524
+            ],
+            "scorePercentiles" : {
+                "0.0" : 1765.330367,
+                "50.0" : 1768.888231,
+                "90.0" : 1777.4024620999999,
+                "95.0" : 1777.649332,
+                "99.0" : 1777.649332,
+                "99.9" : 1777.649332,
+                "99.99" : 1777.649332,
+                "99.999" : 1777.649332,
+                "99.9999" : 1777.649332,
+                "100.0" : 1777.649332
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    1773.422859,
+                    1775.180633,
+                    1770.95706,
+                    1769.402712,
+                    1777.649332,
+                    1768.169713,
+                    1768.37375,
+                    1765.330367,
+                    1765.917217,
+                    1768.291607
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+
