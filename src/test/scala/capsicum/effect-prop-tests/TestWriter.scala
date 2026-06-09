@@ -1,6 +1,7 @@
-package capsicum.effects
+package capsicum.test.effects
 
 import capsicum.core._
+import capsicum.effects._
 import org.scalacheck.{Arbitrary, Properties, Prop}
 import org.scalacheck.Prop.{forAll, propBoolean}
 import scala.reflect.ClassTag
