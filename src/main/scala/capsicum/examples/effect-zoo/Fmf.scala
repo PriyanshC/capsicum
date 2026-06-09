@@ -9,9 +9,9 @@ object Fmf {
   def theSeq: Seq[Int] = Seq(1, 5)
 
   def round1 = {
-    Flow.fromSeq(Fmf.theSeq)
-      .filter(_ % 2 == 0)
-      .map(_ + 1)
+    Flow.fromSeqSafe(Fmf.theSeq)
+      .evalFilter([R] => (x: Int, resume: Boolean => R) => resume(x % 2 == 0))
+      .evalMap[Int]([R] => (x: Int, resume: Int => R) => resume(x + 1))
       .fold(0)(_ + _)
   }
 }
