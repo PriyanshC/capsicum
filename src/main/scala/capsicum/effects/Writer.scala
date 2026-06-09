@@ -14,7 +14,7 @@ trait WriterCapability[T, P, R] extends Capability[Writer[T], P, R] {
 
 class LogWriter[T, R] extends WriterCapability[T, R, R] with OneShotKeepResult[Writer[T], R] {
   private val logBuffer = ListBuffer.empty[T]
-  def logs: List[T] = logs.toList
+  def logs: List[T] = logBuffer.toList
 
   override protected def handleEff[V](eff: Writer[T][V]): V = eff match
     case Tell(t) => (logBuffer += t): Unit
