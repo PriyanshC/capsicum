@@ -26,7 +26,7 @@ def nQueensVanilla(n: Int): Seq[List[Int]] = {
 @Fork(1)
 class NQueensBenchmark {
 
-  @Param(Array("8", "10", "12"))
+  @Param(Array("10", "12", "14"))
   var n: Int = scala.compiletime.uninitialized
 
   @Setup(Level.Trial)
