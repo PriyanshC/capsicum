@@ -6,17 +6,11 @@ import java.util.concurrent.TimeUnit
 import capsicum.examples.NQueensBacktracking
 
 def nQueensVanilla(n: Int): Seq[List[Int]] = {
-  def isSafe(col: Int, queens: List[Int]): Boolean = {
-    queens.zip(LazyList.from(1)).forall { case (c, deltaRow) =>
-      c != col && math.abs(c - col) != deltaRow
-    }
-  }
-
   def placeQueens(k: Int, queens: List[Int]): Seq[List[Int]] = {
     if (k == n) {
       Seq(queens.reverse)
     } else {
-      val safeCols = (0 until n).filter(c => isSafe(c, queens))
+      val safeCols = (0 until n).filter(c => NQueensBacktracking.isSafe(c, queens))
       safeCols.flatMap(col => placeQueens(k + 1, col :: queens))
     }
   }

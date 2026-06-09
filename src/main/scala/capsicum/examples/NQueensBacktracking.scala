@@ -13,13 +13,20 @@ object NQueensBacktracking {
 
   type Placed = List[Int]
 
-  def solve(n: Int): Seq[List[Int]] = {
-    def isSafe(col: Int, queens: List[Int]): Boolean = {
-      queens.zip(LazyList.from(1)).forall { case (c, deltaRow) =>
-        c != col && math.abs(c - col) != deltaRow
-      }
+  def isSafe(col: Int, queens: Placed): Boolean = {
+    @scala.annotation.tailrec
+    def check(remainingQueens: List[Int], deltaRow: Int): Boolean = remainingQueens match {
+      case Nil => true
+      case c :: tail =>
+        if (c == col || math.abs(c - col) == deltaRow) false
+        else check(tail, deltaRow + 1)
     }
     
+    check(queens, 1)
+  }
+
+
+  def solve(n: Int): Seq[List[Int]] = {
     def placeQueens(k: Int, queens: List[Int])(using amb: AmbCapability[Seq[Placed]]): Seq[Placed] = {
       if (k == n) {
         Seq(queens.reverse)
