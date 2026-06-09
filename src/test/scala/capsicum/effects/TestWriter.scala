@@ -8,7 +8,7 @@ import scala.reflect.ClassTag
 abstract class WriterLaws[W: Arbitrary : ClassTag, S, K <: WriterCapability[W, Unit, Unit]](
   newWriter: () => K,
   extractState: K => S,
-  combine: (W, W) => S // How the monoid merges two values
+  combine: (W, W) => S
 )(implicit ctag: ClassTag[K], ttag: ClassTag[W]) extends Properties(s"WriterLaws for ${ctag.runtimeClass.getSimpleName()}[${ttag.runtimeClass.getSimpleName()}]") {
 
   property("Tell-Tell (Monoid Association)") = forAll { (w1: W, w2: W) =>
