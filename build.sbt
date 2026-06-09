@@ -26,3 +26,11 @@ lazy val experiments = (project in file("experiments"))
       "org.typelevel" %% "cats-core" % "2.13.0",
     )
   )
+
+lazy val benchmarks = (project in file("benchmarks"))
+  .dependsOn(root)
+  .enablePlugins(JmhPlugin)
+  .settings(
+    name := "capsicum-benchmarks",
+    publish / skip := true
+  )
