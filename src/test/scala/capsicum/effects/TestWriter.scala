@@ -57,3 +57,10 @@ abstract class SumWriterLaws[N: Arbitrary : ClassTag](using num: Numeric[N]) ext
     empty = num.zero,
     combine = (acc, n) => num.plus(acc, n)
   )
+
+object LogBooleanWriterSpec extends LogWriterLaws[Boolean]
+object LogListWriterSpec extends LogWriterLaws[List[Int]]
+
+object SumIntWriterSpec extends SumWriterLaws[Int]
+object SumFloatWriterSpec extends SumWriterLaws[Float]
+object SumBigDecimalWriterSpec extends SumWriterLaws[BigDecimal]
