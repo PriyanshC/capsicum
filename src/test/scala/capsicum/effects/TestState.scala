@@ -1,7 +1,7 @@
 package capsicum.effects
 
 import org.scalacheck.{Arbitrary, Properties, Prop}
-import org.scalacheck.Prop.forAll
+import org.scalacheck.Prop.{forAll, propBoolean}
 import scala.reflect.ClassTag
 
 abstract class StateLaws[S: Arbitrary : ClassTag, K <: StateCapability[S, Boolean]](
@@ -36,6 +36,22 @@ abstract class StateFnLaws[S: Arbitrary](newState: =>StateCapability[S, S => S])
     val stateFn = state.get(_ => identity)
     val finalState = stateFn(initial)
     finalState == initial
+  }
+
+  property("Get-Get") = forAll { (initial: S, poison: S) =>
+    (initial != poison) ==> {
+      val state = newState
+
+      val stateFn = state.get { s1 =>
+        state.get { s2 =>
+          if (s1 == s2) identity
+          else _ => poison
+        }
+      }
+
+      val finalState = stateFn(initial)
+      finalState != poison
+    }
   }
 
   property("Put-Get") = forAll { (initial: S, value: S) =>
