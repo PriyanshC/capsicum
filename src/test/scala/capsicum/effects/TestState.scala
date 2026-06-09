@@ -13,6 +13,11 @@ abstract class StateLaws[S: Arbitrary : ClassTag, K <: StateCapability[S, Boolea
     state.get(_ == initial)
   }
 
+  property("Get-Get") = forAll { (initial: S) =>
+    val state = newState(initial)
+    state.get(s1 => state.get(s2 => s1 == s2))
+  }
+
   property("Put-Get") = forAll { (initial: S, value: S) =>
     val state = newState(initial)
     state.put(value)(_ => state.get(_ == value))
