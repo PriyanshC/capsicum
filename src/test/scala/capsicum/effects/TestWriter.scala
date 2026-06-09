@@ -5,25 +5,41 @@ import org.scalacheck.{Arbitrary, Properties, Prop}
 import org.scalacheck.Prop.{forAll, propBoolean}
 import scala.reflect.ClassTag
 
-abstract class WriterLaws[W: Arbitrary : ClassTag, S, K <: WriterCapability[W, Unit, Unit]](
-  newWriter: () => K,
+abstract class WriterLaws[W: Arbitrary : ClassTag, S, K <: WriterCapability[W, Boolean, Boolean]](
+  newWriter: =>K,
   extractState: K => S,
-  combine: (W, W) => S
+  empty: S,
+  combine: (S, W) => S
 )(implicit ctag: ClassTag[K], ttag: ClassTag[W]) extends Properties(s"WriterLaws for ${ctag.runtimeClass.getSimpleName()}[${ttag.runtimeClass.getSimpleName()}]") {
 
-  property("Tell-Tell (Monoid Association)") = forAll { (w1: W, w2: W) =>
-    val writer = newWriter()
+  private def writeAll(writer: K, elements: List[W])(onComplete: => Boolean): Boolean = elements match {
+    case Nil => onComplete
+    case head :: tail => 
+      writer.tell(head) { _ => 
+        writeAll(writer, tail)(onComplete)
+      }
+  }
 
-    writer.tell(w1)(_ => writer.tell(w2)(_ => ()))
-    
-    extractState(writer) == combine(w1, w2)
+  property("Tell-Tell follows monoidal association") = forAll { (w1: W, w2: W) =>
+    val writer = newWriter
+    writer.tell(w1) { _ =>
+      writer.tell(w2) { _ =>
+        extractState(writer) == combine(combine(empty, w1), w2)
+      }
+    }
+  }
+
+  property("Tell-Tell-N arbitrary") = forAll { (elements: List[W]) =>
+    val writer = newWriter
+    writeAll(writer, elements)(extractState(writer) == elements.foldLeft(empty)(combine))
   }
 }
 
-abstract class LogWriterLaws[W: Arbitrary : ClassTag] extends WriterLaws[W, List[W], LogWriter[W, Unit]](
-  () => new LogWriter[W, Unit],
-  writer => writer.logs,
-  (w1, w2) => List(w1, w2)
+abstract class LogWriterLaws[W: Arbitrary : ClassTag] extends WriterLaws[W, List[W], LogWriter[W, Boolean]](
+  newWriter = new LogWriter[W, Boolean],
+  extractState = writer => writer.logs,
+  empty = Nil,
+  combine = (acc, w) => acc :+ w
 )
 
 class SumWriterHandler[N: Numeric, R] extends WriterCapability[N, R, R] with OneShotKeepResult[Writer[N], R] {
@@ -35,16 +51,9 @@ class SumWriterHandler[N: Numeric, R] extends WriterCapability[N, R, R] with One
   }
 }
 
-abstract class SumWriterLaws[N: Arbitrary : ClassTag : Numeric] extends WriterLaws[N, N, SumWriterHandler[N, Unit]](
-  () => new SumWriterHandler[N, Unit],
-  writer => writer.total,
-  (n1, n2) => implicitly[Numeric[N]].plus(n1, n2)
-)
-
-object LogIntWriterSpec extends LogWriterLaws[Int]
-object LogStringWriterSpec extends LogWriterLaws[String]
-
-object LogListWriterSpec extends LogWriterLaws[List[Double]]
-
-object SumIntWriterSpec extends SumWriterLaws[Int]
-object SumDoubleWriterSpec extends SumWriterLaws[Double]
+abstract class SumWriterLaws[N: Arbitrary : ClassTag](using num: Numeric[N]) extends WriterLaws[N, N, SumWriterHandler[N, Boolean]](
+    newWriter = new SumWriterHandler[N, Boolean](),
+    extractState = writer => writer.total,
+    empty = num.zero,
+    combine = (acc, n) => num.plus(acc, n)
+  )
