@@ -55,6 +55,7 @@ def generate_latex(data):
         'mulst': ['1 state', '2 states', '3 states', '4 states', '5 states'],
         'reint': ['100 queries/batch', '1,000 queries/batch', '10,000 queries/batch'],
         'crc': ['Chunk size = 2032', 'Chunk size = 496', 'Chunk size = 112', 'Chunk size = 48', 'Unchunked'],
+        'nqueensbenchmark': ['N = 8', 'N = 10', 'N = 12'],
     }
     
     num_plots = len(categories)
@@ -90,7 +91,7 @@ def generate_latex(data):
         plot_lines.append("      xtick=data,")
         plot_lines.append("      x tick label style={rotate=45, anchor=north east, font=\\footnotesize},") 
         plot_lines.append(f"      enlarge x limits={{abs={enlarge_x}pt}},")
-        plot_lines.append("      enlarge y limits={upper, value=0.3},") 
+        plot_lines.append("      enlarge y limits={upper, value=0.5},") 
         plot_lines.append("      ymin=0,")
         plot_lines.append(f"      x={x_step}pt,") 
         plot_lines.append("      height=6cm,") 
