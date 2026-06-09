@@ -101,6 +101,32 @@ trait Flow[A, W[_]] {
     val wrapped = sink.run(build[Seq[A]](_ => W.pure(sink.collect))(using sink))
     W.eval(wrapped)
   }
+
+  def evalMap[B](f: [R] => (A, B => R) => R): Flow[B, W]^{this} = {
+    val prev = this
+    new Flow[B, W] {
+      def build[R](finish: Unit => W[R])(using out: StreamCap[B, W[R]]): W[R]^{finish, out} = {
+        val mapper = new StreamCap[A, W[R]] {
+          override inline def perform[V](eff: StreamEff[A, V])(resume: V => W[R]): W[R]^{resume} = eff match
+            case Yield(a) => f(a, b => out.emit(b)(resume))
+        }
+        prev.build(finish)(using mapper)
+      }
+    }
+  }
+
+  def evalFilter(f: [R] => (A, Boolean => R) => R): Flow[A, W]^{this} = {
+    val prev = this
+    new Flow[A, W] {
+      def build[R](finish: Unit => W[R])(using out: StreamCap[A, W[R]]): W[R]^{finish, out} = {
+        val filterer = new StreamCap[A, W[R]] {
+          override inline def perform[V](eff: StreamEff[A, V])(resume: V => W[R]): W[R]^{resume} = eff match
+            case Yield(a) => f(a, pass => if (pass) out.emit(a)(resume) else resume(()))
+        }
+        prev.build(finish)(using filterer)
+      }
+    }
+  }
 }
 
 object Flow {
