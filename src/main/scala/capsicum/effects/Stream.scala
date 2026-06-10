@@ -4,6 +4,7 @@ import capsicum.core._
 import language.experimental.captureChecking
 import scala.reflect.ClassTag
 import scala.collection.mutable
+import caps.unsafe.unsafeAssumePure
 
 sealed trait StreamEff[+T, V] extends Effect[V]
 case class Yield[T](value: T) extends StreamEff[T, Unit]
@@ -106,7 +107,7 @@ trait Flow[A, W[_]] {
 object Flow {
   def fromSeq[T](seq: Seq[T]): Flow[T, Id] = new Flow[T, Id] {
     def build[R](finish: Unit => Id[R])(using cap: StreamCap[T, Id[R]]): Id[R]^{finish, cap} = {
-      def loop(s: Seq[T]): Id[R]^{finish, cap} = if (s.isEmpty) finish(()) else cap.emit(s.head)(_ => loop(s.tail).asInstanceOf[Id[R]])
+      def loop(s: Seq[T]): Id[R]^{finish, cap} = if (s.isEmpty) finish(()) else cap.emit(s.head)(_ => unsafeAssumePure(loop(s.tail)))
       loop(seq)
     }
   }
@@ -115,7 +116,7 @@ object Flow {
     def build[R](finish: Unit => Bounce[R])(using cap: StreamCap[T, Bounce[R]]): Bounce[R]^{finish, cap} = {
       def loop(s: Seq[T]): Bounce[R]^{finish, cap} = {
         if (s.isEmpty) capsicum.core.suspend(finish(()))
-        else cap.emit(s.head)(_ => capsicum.core.suspend(loop(s.tail)).asInstanceOf[Bounce[R]])
+        else cap.emit(s.head)(_ => unsafeAssumePure(capsicum.core.suspend(loop(s.tail))))
       }
       loop(seq)
     }
