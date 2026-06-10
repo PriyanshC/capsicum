@@ -1,0 +1,4 @@
+[info] PentominoBenchmark.capsicumPentomino          5x12  avgt   10  1714.667 ± 31.904  ms/op
+[info] PentominoBenchmark.capsicumPentomino          6x10  avgt   10  4533.595 ± 65.693  ms/op
+[info] PentominoBenchmark.vanillaPentomino           5x12  avgt   10  1438.564 ±  9.572  ms/op
+[info] PentominoBenchmark.vanillaPentomino           6x10  avgt   10  4669.581 ± 26.010  ms/op
