@@ -25,7 +25,7 @@ object MutableEntry {
 }
 
 object PureEntry {
-  inline def program(using state: SafePureStateCapability[Int, Int]): Int -> Bounce[(Int, Int)] = {
+  inline def program(using state: SafePureStateCapability[Int, [S] =>> (S, Int)]): Int -> Bounce[(Int, Int)] = {
     def rec: Int -> Bounce[(Int, Int)] = {
       state.get { s =>
         if (s <= 0) then 

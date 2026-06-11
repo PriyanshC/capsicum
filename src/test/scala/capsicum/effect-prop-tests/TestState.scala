@@ -1,7 +1,9 @@
-package capsicum.effects
+package capsicum.test.effects
 
+import capsicum.core._
+import capsicum.effects._
 import org.scalacheck.{Arbitrary, Properties, Prop}
-import org.scalacheck.Prop.forAll
+import org.scalacheck.Prop.{forAll, propBoolean}
 import scala.reflect.ClassTag
 
 abstract class StateLaws[S: Arbitrary : ClassTag, K <: StateCapability[S, Boolean]](
@@ -11,6 +13,11 @@ abstract class StateLaws[S: Arbitrary : ClassTag, K <: StateCapability[S, Boolea
   property("Get") = forAll { (initial: S) =>
     val state = newState(initial)
     state.get(_ == initial)
+  }
+
+  property("Get-Get") = forAll { (initial: S) =>
+    val state = newState(initial)
+    state.get(s1 => state.get(s2 => s1 == s2))
   }
 
   property("Put-Get") = forAll { (initial: S, value: S) =>
@@ -31,6 +38,22 @@ abstract class StateFnLaws[S: Arbitrary](newState: =>StateCapability[S, S => S])
     val stateFn = state.get(_ => identity)
     val finalState = stateFn(initial)
     finalState == initial
+  }
+
+  property("Get-Get") = forAll { (initial: S, poison: S) =>
+    (initial != poison) ==> {
+      val state = newState
+
+      val stateFn = state.get { s1 =>
+        state.get { s2 =>
+          if (s1 == s2) identity
+          else _ => poison
+        }
+      }
+
+      val finalState = stateFn(initial)
+      finalState != poison
+    }
   }
 
   property("Put-Get") = forAll { (initial: S, value: S) =>
@@ -55,16 +78,16 @@ def mkRWState[S: Arbitrary](s: S): RWStateHandler[S, Boolean] = {
   new RWStateHandler(r, w)
 }
 abstract class MutStateLaws[S: Arbitrary : ClassTag] extends StateLaws[S, MutableStateHandler[S, Boolean]](new MutableStateHandler(_))
-abstract class PurerStateLaws[S: Arbitrary : ClassTag] extends StateFnLaws[S](new PurerStateCapability)
+abstract class PureStateLaws[S: Arbitrary : ClassTag] extends StateFnLaws[S](new PureStateCapability[S, Id])
 abstract class RWStateLaws[S: Arbitrary : ClassTag] extends StateLaws[S, RWStateHandler[S, Boolean]](mkRWState)
 
 object MutIntStateSpec extends MutStateLaws[Int]
 object MutStringStateSpec extends MutStateLaws[String]
 object MutListStateSpec extends MutStateLaws[List[Double]]
 
-object PureIntStateSpec extends PurerStateLaws[Int]
-object PureStringStateSpec extends PurerStateLaws[String]
-object PureListStateSpec extends PurerStateLaws[List[Double]]
+object PureIntStateSpec extends PureStateLaws[Int]
+object PureStringStateSpec extends PureStateLaws[String]
+object PureListStateSpec extends PureStateLaws[List[Double]]
 
 object RWIntStateSpec extends RWStateLaws[Int]
 object RWStringStateSpec extends RWStateLaws[String]
