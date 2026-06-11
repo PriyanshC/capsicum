@@ -20,23 +20,23 @@ def basicMutableState(): Int = {
   mutableHandler.run(prog)
 }
 
-def basicPureState(): Int = {
-  val pureHandler = new PureStateCapability[Int, Int]
+// def basicPureState(): Int = {
+//   val pureHandler = new PureStateCapability[Int, Int]
   
-  def prog(using state: PureStateCapability[Int, Int]): Int ->{state} (Int, Int) = {
-    state.get { s1 =>
-      state.put(s1 + 5) { _ =>
-        state.get { s2 =>
-          (currentState: Int) => (currentState, s2)
-        }
-      }
-    }
-  }
+//   def prog(using state: PureStateCapability[Int, Int]): Int ->{state} (Int, Int) = {
+//     state.get { s1 =>
+//       state.put(s1 + 5) { _ =>
+//         state.get { s2 =>
+//           (currentState: Int) => (currentState, s2)
+//         }
+//       }
+//     }
+//   }
 
-  val stateFn: Int -> (Int, Int) = pureHandler.run(prog)
-  val (finalState, result) = stateFn(10)
-  result
-}
+//   val stateFn: Int -> (Int, Int) = pureHandler.run(prog)
+//   val (finalState, result) = stateFn(10)
+//   result
+// }
 
 def trackedState(): Unit = {
   class FileSystem
@@ -76,3 +76,42 @@ def trackedState(): Unit = {
   handler.run(progWithScopedCapture)
   handler.run(progWithPolymorphicCapture)
 }
+
+
+def compareMutablePureBacktracking(): Unit = {
+  type F = Int -> (Int, Unit)
+  case class Choose[V](choices: Seq[V]) extends Effect[V]
+  class ThreadedAmbCapability extends Capability[Choose, F, F] {
+    final def choose[V](choices: Seq[V]): (resume : V => F) => F^{resume} = perform(Choose(choices))
+    override def perform[V](eff: Choose[V])(resume: V => F): F^{resume} = {
+      (initialState: Int) => {
+        eff.choices.foldLeft((initialState, ())) { case ((currentState, _), choice) =>
+          resume(choice)(currentState)
+        }
+      }
+    }
+  }
+
+  inline def progPure(using amb: ThreadedAmbCapability, state: PureStateCapability[Int, Unit]): Int = {
+    val fn = amb.perform(Choose(Seq("Heads", "Tails"))) { flip =>
+      state.update(_ + 1) { _ =>
+        if (flip == "Heads") {
+          amb.perform(Choose(Seq("Heads", "Tails"))) { _ =>
+            state.update(_ + 1) { _ =>
+              state.get(_ => currentState => (currentState, ()))
+            }
+          }
+        } else {
+          state.get(_ => currentState => (currentState, ()))
+        }
+      }
+    }
+    fn(0)._1
+  }
+
+  val state = new PureStateCapability[Int, Unit]
+  val amb = new ThreadedAmbCapability
+
+  println(state.run(amb.run(progPure)))
+}
+
