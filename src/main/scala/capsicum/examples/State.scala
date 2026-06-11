@@ -79,37 +79,37 @@ def trackedState(): Unit = {
 
 
 def compareMutablePureBacktracking(): Unit = {
-  type F = Int -> (Int, Unit)
+  type F = Int -> Int
   case class Choose[V](choices: Seq[V]) extends Effect[V]
   class ThreadedAmbCapability extends Capability[Choose, F, F] {
     final def choose[V](choices: Seq[V]): (resume : V => F) => F^{resume} = perform(Choose(choices))
     override def perform[V](eff: Choose[V])(resume: V => F): F^{resume} = {
       (initialState: Int) => {
-        eff.choices.foldLeft((initialState, ())) { case ((currentState, _), choice) =>
+        eff.choices.foldLeft((initialState)) { case (currentState, choice) =>
           resume(choice)(currentState)
         }
       }
     }
   }
 
-  inline def progPure(using amb: ThreadedAmbCapability, state: PureStateCapability[Int, Unit]): Int = {
+  inline def progPure(using amb: ThreadedAmbCapability, state: PureStateCapability[Int, Id]): Int = {
     val fn = amb.perform(Choose(Seq("Heads", "Tails"))) { flip =>
       state.update(_ + 1) { _ =>
         if (flip == "Heads") {
           amb.perform(Choose(Seq("Heads", "Tails"))) { _ =>
             state.update(_ + 1) { _ =>
-              state.get(_ => currentState => (currentState, ()))
+              state.get(_ => currentState => currentState)
             }
           }
         } else {
-          state.get(_ => currentState => (currentState, ()))
+          state.get(_ => currentState => currentState)
         }
       }
     }
-    fn(0)._1
+    fn(0)
   }
 
-  val state = new PureStateCapability[Int, Unit]
+  val state = new PureStateCapability[Int, Id]
   val amb = new ThreadedAmbCapability
 
   println(state.run(amb.run(progPure)))

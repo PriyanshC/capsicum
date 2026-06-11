@@ -47,14 +47,13 @@ class MutableStateHandler[S, R](private [effects] var state: S) extends Stateful
   }
 }
 
-class TruePureStateCapability[S, F[_]] extends StateCapability[S, S -> F[S]] {
+class PureStateCapability[S, F[_]] extends StateCapability[S, S -> F[S]] {
   override def perform[V](eff: StateEff[S, V])(resume: V => (S -> F[S])): S ->{resume} F[S] = eff match {
     case StateOp.Get() => (currentState: S) => resume(currentState)(currentState)
     case StateOp.Put(newState) => (_: S) => resume(())(newState)
   }
 }
 
-class PureStateCapability[S, A] extends TruePureStateCapability[S, [S] =>> (S, A)]
 
 object State {
   inline def runMut[S, R](inline initial: S)(inline prog: StatefulCapability[S, R] ?=> R): (S, R) = {
