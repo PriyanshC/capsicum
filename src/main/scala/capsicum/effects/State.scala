@@ -55,7 +55,6 @@ class TruePureStateCapability[S, F[_]] extends StateCapability[S, S -> F[S]] {
 }
 
 class PureStateCapability[S, A] extends TruePureStateCapability[S, [S] =>> (S, A)]
-class PurerStateCapability[S] extends TruePureStateCapability[S, Id]
 
 object State {
   inline def runMut[S, R](inline initial: S)(inline prog: StatefulCapability[S, R] ?=> R): (S, R) = {

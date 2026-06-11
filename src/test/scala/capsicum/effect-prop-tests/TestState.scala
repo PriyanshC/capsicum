@@ -78,16 +78,16 @@ def mkRWState[S: Arbitrary](s: S): RWStateHandler[S, Boolean] = {
   new RWStateHandler(r, w)
 }
 abstract class MutStateLaws[S: Arbitrary : ClassTag] extends StateLaws[S, MutableStateHandler[S, Boolean]](new MutableStateHandler(_))
-abstract class PurerStateLaws[S: Arbitrary : ClassTag] extends StateFnLaws[S](new PurerStateCapability)
+abstract class PureStateLaws[S: Arbitrary : ClassTag] extends StateFnLaws[S](new TruePureStateCapability[S, Id])
 abstract class RWStateLaws[S: Arbitrary : ClassTag] extends StateLaws[S, RWStateHandler[S, Boolean]](mkRWState)
 
 object MutIntStateSpec extends MutStateLaws[Int]
 object MutStringStateSpec extends MutStateLaws[String]
 object MutListStateSpec extends MutStateLaws[List[Double]]
 
-object PureIntStateSpec extends PurerStateLaws[Int]
-object PureStringStateSpec extends PurerStateLaws[String]
-object PureListStateSpec extends PurerStateLaws[List[Double]]
+object PureIntStateSpec extends PureStateLaws[Int]
+object PureStringStateSpec extends PureStateLaws[String]
+object PureListStateSpec extends PureStateLaws[List[Double]]
 
 object RWIntStateSpec extends RWStateLaws[Int]
 object RWStringStateSpec extends RWStateLaws[String]
