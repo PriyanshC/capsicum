@@ -109,3 +109,27 @@ lazy object PoisonState {
     }
   }
 }
+
+lazy object MutatingBacktrack {
+  case class Choose[V](choices: Seq[V]) extends Effect[V]
+  class AmbCapability[R] extends Capability[Choose, Unit, Unit] {
+    final def choose[V](choices: Seq[V]): (V => Unit) => Unit = perform(Choose(choices))
+    override def perform[V](eff: Choose[V])(resume: V => Unit): Unit
+      = eff.choices.foreach(resume)
+  }
+  def prog(using amb: AmbCapability[Unit]): Int = {
+    var coinFlips = 0
+    amb.choose(Seq("Heads", "Tails")) { flip =>
+      coinFlips += 1
+      val countAtEntry = coinFlips
+      if (flip == "Heads") {
+        amb.choose(Seq("Heads", "Tails")) { _ =>
+          coinFlips += 1
+        }
+      }
+    }
+    coinFlips
+  }
+  val result = AmbCapability().run(prog) // 4
+  println(s"The coin was flipped a total of $result times")
+}

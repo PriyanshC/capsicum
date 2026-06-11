@@ -8,8 +8,9 @@ import caps.unsafe.unsafeAssumePure
 
 sealed trait StreamEff[+T, V] extends Effect[V]
 case class Yield[T](value: T) extends StreamEff[T, Unit]
+type Stream[T] = [V] =>> StreamEff[T, V]
 
-trait StreamCap[T, R] extends Capability[[V] =>> StreamEff[T, V], R, R] {
+trait StreamCap[T, R] extends Capability[Stream[T], R, R] {
   final def emit(value: T)(resume: Unit => R): R^{resume} = perform(Yield(value))(resume)
 }
 
