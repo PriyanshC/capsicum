@@ -119,11 +119,11 @@ lazy object MutatingBacktrack {
   }
   def prog(using amb: AmbCapability[Unit]): Int = {
     var coinFlips = 0
-    amb.choose(Seq("Heads", "Tails")) { branch =>
+    amb.choose(Seq("Heads", "Tails")) { flip =>
       coinFlips += 1
       val countAtEntry = coinFlips
-      if (branch == "Heads") {
-        amb.choose(Seq("Heads", "Tails")) { sub =>
+      if (flip == "Heads") {
+        amb.choose(Seq("Heads", "Tails")) { _ =>
           coinFlips += 1
         }
       }
