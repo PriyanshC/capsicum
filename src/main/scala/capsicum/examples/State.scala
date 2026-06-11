@@ -20,23 +20,23 @@ def basicMutableState(): Int = {
   mutableHandler.run(prog)
 }
 
-// def basicPureState(): Int = {
-//   val pureHandler = new PureStateCapability[Int, Int]
+def basicPureState(): Int = {
+  val pureHandler = new PureStateCapability[Int, [S] =>> (S, Int)]
   
-//   def prog(using state: PureStateCapability[Int, Int]): Int ->{state} (Int, Int) = {
-//     state.get { s1 =>
-//       state.put(s1 + 5) { _ =>
-//         state.get { s2 =>
-//           (currentState: Int) => (currentState, s2)
-//         }
-//       }
-//     }
-//   }
+  inline def prog(using state: PureStateCapability[Int, [S] =>> (S, Int)]): Int ->{state} (Int, Int) = {
+    state.get { s1 =>
+      state.put(s1 + 5) { _ =>
+        state.get { s2 =>
+          (currentState: Int) => (currentState, s2)
+        }
+      }
+    }
+  }
 
-//   val stateFn: Int -> (Int, Int) = pureHandler.run(prog)
-//   val (finalState, result) = stateFn(10)
-//   result
-// }
+  val stateFn: Int -> (Int, Int) = pureHandler.run(prog)
+  val (finalState, result) = stateFn(10)
+  result
+}
 
 def trackedState(): Unit = {
   class FileSystem
