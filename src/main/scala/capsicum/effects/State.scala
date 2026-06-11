@@ -47,8 +47,8 @@ class MutableStateHandler[S, R](private [effects] var state: S) extends Stateful
   }
 }
 
-class PureStateCapability[S, F[_]] extends StateCapability[S, S -> F[S]] {
-  override def perform[V](eff: StateEff[S, V])(resume: V => (S -> F[S])): S ->{resume} F[S] = eff match {
+class PureStateCapability[S, T[_]] extends StateCapability[S, S -> T[S]] {
+  override def perform[V](eff: StateEff[S, V])(resume: V => (S -> T[S])): S ->{resume} T[S] = eff match {
     case StateOp.Get() => (currentState: S) => resume(currentState)(currentState)
     case StateOp.Put(newState) => (_: S) => resume(())(newState)
   }
@@ -68,7 +68,7 @@ object State {
   }
   // pure doesn't work as well because it captures h
 
-  inline def runPureSafe[S, A, F[_]](inline initial: S)(inline prog: SafePureStateCapability[S, F] ?=> (S -> Bounce[(S, A)])): (S, A) = {
+  inline def runPureSafe[S, A, T[_]](inline initial: S)(inline prog: SafePureStateCapability[S, F] ?=> (S -> Bounce[(S, A)])): (S, A) = {
     val h = new SafePureStateCapability[S, F]
     h.run(prog)(initial).eval
   }
