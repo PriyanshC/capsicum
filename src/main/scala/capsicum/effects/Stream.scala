@@ -7,7 +7,7 @@ import scala.collection.mutable
 import caps.unsafe.unsafeAssumePure
 
 sealed trait StreamEff[+T, V] extends Effect[V]
-case class Yield[T](value: T) extends StreamEff[T, Unit]
+case class Yield[+T](value: T) extends StreamEff[T, Unit]
 type Stream[T] = [V] =>> StreamEff[T, V]
 
 trait StreamCap[T, R] extends Capability[Stream[T], R, R] {
