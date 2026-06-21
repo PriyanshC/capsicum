@@ -24,7 +24,8 @@ lazy val experiments = (project in file("experiments"))
       "io.getkyo" %% "kyo-prelude" % kyoVersion,
       "io.getkyo" %% "kyo-core"    % kyoVersion,
       "org.typelevel" %% "cats-core" % "2.13.0",
-    )
+    ),
+    unmanagedBase := file("/usr/lib/libreoffice/program/classes")
   )
 
 lazy val benchmarks = (project in file("benchmarks"))
