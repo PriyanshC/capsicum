@@ -97,9 +97,10 @@ def deliverThesis(using pres: PresentationCapability[Unit], console: ConsoleCapa
   loop(1)
 }
 
-@main def runPresentationController(): Unit = {
+@main def runPresentationController(args: String*): Unit = {
+  val path = args.headOption.getOrElse("/home/pc/Downloads/MEng Presentation.pptx")
   val console = new StdConsoleHandler[Unit]
-  val handler = new LibreOfficePresentationHandler[Unit]("~/MEng Presentation.pptx")
+  val handler = new LibreOfficePresentationHandler[Unit](path)
   run(console, handler)(deliverThesis)
 }
 
