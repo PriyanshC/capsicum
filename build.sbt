@@ -35,3 +35,5 @@ lazy val benchmarks = (project in file("benchmarks"))
     name := "capsicum-benchmarks",
     publish / skip := true
   )
+
+addCommandAlias("runPres", "experiments/Compile/runMain  capsicum.examples.presentation.runPresentationController")
