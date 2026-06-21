@@ -33,8 +33,8 @@ trait PresentationCapability[R] extends Capability[Presentation, R, R] {
 
 class LibreOfficePresentationHandler[R](path: String, host: String = "localhost", port: Int = 8100) extends PresentationCapability[R] with OneShotKeepResult[PresentationEff, R] {
 
-  private var document: XComponent = _
-  private var presentation: XPresentation2 = _
+  private var document: XComponent = scala.compiletime.uninitialized
+  private var presentation: XPresentation2 = scala.compiletime.uninitialized
 
   def loadPresentation(presentationFile: File): Unit = {
     val localContext = Bootstrap.createInitialComponentContext(null)
