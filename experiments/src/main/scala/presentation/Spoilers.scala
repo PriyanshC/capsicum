@@ -1,9 +1,10 @@
 package capsicum.examples.presentation.spoilers
 
-trait Database {
-  def fetchName(id: Int): String // Try[String]
-  def close(): Unit
-}
+import capsicum.examples.presentation.Database
+// trait Database {
+//   def fetchName(id: Int): String // Try[String]
+//   def close(): Unit
+// }
 
 object SomeDatabase {
   def openConnection(): Database = new Database {
