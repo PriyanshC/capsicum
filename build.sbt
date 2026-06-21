@@ -25,7 +25,8 @@ lazy val experiments = (project in file("experiments"))
       "io.getkyo" %% "kyo-core"    % kyoVersion,
       "org.typelevel" %% "cats-core" % "2.13.0",
     ),
-    unmanagedBase := file("/usr/lib/libreoffice/program/classes")
+    unmanagedBase := file("/usr/lib/libreoffice/program/classes"),
+    Compile/mainClass := Some("capsicum.examples.presentation.main")
   )
 
 lazy val benchmarks = (project in file("benchmarks"))
@@ -37,4 +38,3 @@ lazy val benchmarks = (project in file("benchmarks"))
   )
 
 addCommandAlias("runPres", "experiments/Compile/runMain  capsicum.examples.presentation.runPresentationController")
-Compile/mainClass := Some("capsicum.examples.presentation.main")
