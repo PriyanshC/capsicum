@@ -37,3 +37,4 @@ lazy val benchmarks = (project in file("benchmarks"))
   )
 
 addCommandAlias("runPres", "experiments/Compile/runMain  capsicum.examples.presentation.runPresentationController")
+Compile/mainClass := Some("capsicum.examples.presentation.main")
