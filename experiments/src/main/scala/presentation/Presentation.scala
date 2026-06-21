@@ -13,6 +13,8 @@ import com.sun.star.presentation.{XPresentation2, XPresentationSupplier, XSlideS
 import com.sun.star.uno.{UnoRuntime, XComponentContext}
 import java.io.File
 
+// soffice "--accept=socket,host=localhost,port=8100;urp;"
+
 // Effect and capability template definitions
 
 sealed trait PresentationEff[V] extends Effect[V]
