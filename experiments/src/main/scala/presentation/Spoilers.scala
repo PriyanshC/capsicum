@@ -1,10 +1,10 @@
 package capsicum.examples.presentation.spoilers
 
-import capsicum.examples.presentation.Database
-// trait Database {
-//   def fetchName(id: Int): String // Try[String]
-//   def close(): Unit
-// }
+// import capsicum.examples.presentation.Database
+trait Database {
+  def fetchName(id: Int): String // Try[String]
+  def close(): Unit
+}
 
 object SomeDatabase {
   def openConnection(): Database = new Database {
@@ -16,9 +16,11 @@ object SomeDatabase {
     }
     override def close(): Unit = isClosed = true
   }
+}
 
+object RunDatabase {
   def withConnection[R](logic: Database => R): R = {
-    val db = openConnection()
+    val db = SomeDatabase.openConnection()
     val result = logic(db)
     db.close()
     result
@@ -35,13 +37,13 @@ object SomeDatabase {
 case class DB[R](run: Database => R) // 'Reader' monad
 
 def simpleDirect(ids: List[Int]): List[String] = {
-  SomeDatabase.withConnection { db =>
+  RunDatabase.withConnection { db =>
     ids.map(id => db.fetchName(id))
   }
 }
 
 def naughtyDirect(ids: List[Int]): () => List[String] = {
-  SomeDatabase.withConnection { db =>
+  RunDatabase.withConnection { db =>
     () => ids.map(id => db.fetchName(id))
   }
 }
