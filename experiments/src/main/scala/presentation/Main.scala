@@ -102,7 +102,7 @@ def runMonad[R](logic: DB[R]): R = {
 
 // Monadic-style
 // @main def main(): Unit = {
-//   val ids = LazyList(1, 2, 3)
+//   val ids = List(1, 2, 3)
 //   val monad = DB { db =>
 //     ids.map(id => db.fetchName(id))
 //   }
