@@ -12,24 +12,29 @@ import com.sun.star.lang.XComponent
 import com.sun.star.presentation.{XPresentation2, XPresentationSupplier, XSlideShowController}
 import com.sun.star.uno.{UnoRuntime, XComponentContext}
 import java.io.File
+import scala.concurrent.duration.{Duration, DurationLong}
 
 // soffice "--accept=socket,host=localhost,port=8100;urp;"
 
 // Effect and capability template definitions
 
 sealed trait PresentationEff[V] extends Effect[V]
-type Presentation = [V] =>> PresentationEff[V]
-
 case object Next extends PresentationEff[Unit]
 case object Prev extends PresentationEff[Unit]
 
-trait PresentationCapability[R] extends Capability[Presentation, R, R] {
+trait PresentationCapability[R] extends Capability[PresentationEff, R, R] {
   final inline def nextSlide(inline resume: Unit => R): R = 
     perform(Next)(resume)
     
   final inline def prevSlide(inline resume: Unit => R): R = 
     perform(Prev)(resume)
 }
+
+sealed trait TimerEff[V] extends Effect[V]
+case object Start extends TimerEff[Unit]
+case object Current extends TimerEff[Duration]
+
+
 
 // Live instance
 
@@ -84,25 +89,38 @@ class LibreOfficePresentationHandler[R](path: String, host: String = "localhost"
   }
 }
 
+
+class TimerCapability[R] extends Capability[TimerEff, R, R] with OneShotKeepResult[TimerEff, R] {
+  private var startMillis: Option[Long] = None
+  inline def start(inline resume: Unit => R) = perform(Start)(resume)
+  inline def current(inline resume: Duration => R) = perform(Current)(resume)
+  override protected def handleEff[V](eff: TimerEff[V]): V = eff match
+    case Start => startMillis = Some(System.currentTimeMillis())
+    case Current => startMillis.map((System.currentTimeMillis() - _)).getOrElse(0L).millis
+}
+
 // Main
 
-def deliverThesis(using pres: PresentationCapability[Unit], console: ConsoleCapability[Unit]): Unit = {
+def deliverThesis(using pres: PresentationCapability[Unit], console: ConsoleCapability[Unit], timer: TimerCapability[Unit]): Unit = {
   def loop(slide: Int): Unit = {
-    console.print(s"Slide $slide\n> ") { _ =>
-      console.readLine { cmd => cmd.toLowerCase() match
-        case "exit" | "quit" => ()
-        case "back" | "prev" | "b" => pres.prevSlide(_ => loop(slide - 1))
-        case _ => pres.nextSlide(_ => loop(slide + 1))
+    timer.current { t =>
+      console.print(f"Slide $slide (${t.toMinutes}%02d:${t.toSeconds % 60}%02d)\n> ") { _ =>
+        console.readLine { cmd => cmd.toLowerCase() match
+          case "exit" | "quit" => ()
+          case "back" | "prev" | "b" => pres.prevSlide(_ => loop(slide - 1))
+          case _ => pres.nextSlide(_ => loop(slide + 1))
+        }
       }
     }
   }
-  loop(1)
+  timer.start(_ => loop(1))
 }
 
 @main def runPresentationController(args: String*): Unit = {
   val path = args.headOption.getOrElse("/home/pc/Downloads/MEng Presentation.pptx")
   val console = new StdConsoleHandler[Unit]
   val handler = new LibreOfficePresentationHandler[Unit](path)
-  run(console, handler)(deliverThesis)
+  val timer = new TimerCapability[Unit]
+  run(console, handler, timer)(deliverThesis)
 }
 
