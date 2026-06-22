@@ -163,6 +163,7 @@ def deliverThesis(using pres: PresentationCapability[Unit], console: ConsoleCapa
         console.print(f"Slide $slide (${formatDuration(t)})\n$notes\n> ") { _ =>
           console.readLine { cmd => cmd.toLowerCase() match
             case "exit" | "quit"       => ()
+            case "start"               => timer.start(_ => loop)
             case "back" | "prev" | "b" => pres.prevSlide(_ => loop)
             case "time" | "t"          => timer.current(tt => console.print(s"${{formatDuration(tt)}}\n")(_ => loop))
             case _                     => pres.nextSlide(_ => loop)
@@ -171,7 +172,7 @@ def deliverThesis(using pres: PresentationCapability[Unit], console: ConsoleCapa
       }
     }
   }
-  timer.start(_ => loop)
+  loop
 }
 
 @main def runPresentationController(args: String*): Unit = {
