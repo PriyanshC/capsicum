@@ -21,13 +21,12 @@ import scala.concurrent.duration.{Duration, DurationLong}
 sealed trait PresentationEff[V] extends Effect[V]
 case object Next extends PresentationEff[Unit]
 case object Prev extends PresentationEff[Unit]
+case object SlideIdx extends PresentationEff[Int]
 
 trait PresentationCapability[R] extends Capability[PresentationEff, R, R] {
-  final inline def nextSlide(inline resume: Unit => R): R = 
-    perform(Next)(resume)
-    
-  final inline def prevSlide(inline resume: Unit => R): R = 
-    perform(Prev)(resume)
+  final inline def nextSlide(inline resume: Unit => R): R = perform(Next)(resume)
+  final inline def prevSlide(inline resume: Unit => R): R = perform(Prev)(resume)
+  final inline def slideIdx(inline resume: Int => R): R = perform(SlideIdx)(resume)
 }
 
 sealed trait TimerEff[V] extends Effect[V]
@@ -86,6 +85,7 @@ class LibreOfficePresentationHandler[R](path: String, host: String = "localhost"
   override protected def handleEff[V](eff: PresentationEff[V]): V = eff match {
     case Next => getLiveController.gotoNextEffect()
     case Prev => getLiveController.gotoPreviousEffect()
+    case SlideIdx => getLiveController.getCurrentSlideIndex()
   }
 }
 
@@ -104,19 +104,21 @@ class TimerCapability[R] extends Capability[TimerEff, R, R] with OneShotKeepResu
 def formatDuration(t: Duration): String = f"${t.toMinutes}%02d:${t.toSeconds % 60}%02d"
 
 def deliverThesis(using pres: PresentationCapability[Unit], console: ConsoleCapability[Unit], timer: TimerCapability[Unit]): Unit = {
-  def loop(slide: Int): Unit = {
+  def loop: Unit = {
     timer.current { t =>
-      console.print(f"Slide $slide (${formatDuration(t)})\n> ") { _ =>
-        console.readLine { cmd => cmd.toLowerCase() match
-          case "exit" | "quit"       => ()
-          case "back" | "prev" | "b" => pres.prevSlide(_ => loop(slide - 1))
-          case "time" | "t"          => timer.current(tt => console.print(s"${{formatDuration(tt)}}\n")(_ => loop(slide)))
-          case _                     => pres.nextSlide(_ => loop(slide + 1))
+      pres.slideIdx { slide =>
+        console.print(f"Slide $slide (${formatDuration(t)})\n> ") { _ =>
+          console.readLine { cmd => cmd.toLowerCase() match
+            case "exit" | "quit"       => ()
+            case "back" | "prev" | "b" => pres.prevSlide(_ => loop)
+            case "time" | "t"          => timer.current(tt => console.print(s"${{formatDuration(tt)}}\n")(_ => loop))
+            case _                     => pres.nextSlide(_ => loop)
+          }
         }
       }
     }
   }
-  timer.start(_ => loop(1))
+  timer.start(_ => loop)
 }
 
 @main def runPresentationController(args: String*): Unit = {
