@@ -23,8 +23,6 @@ def openConnection(): Database = SomeDatabase.openConnection()
 
 
 
-
-
 def withConnection[R](logic: Database => R): R = {
   val db = openConnection()
   val result = logic(db)
@@ -44,13 +42,6 @@ def withConnection[R](logic: Database => R): R = {
 
 
 
-
-
-
-
-
-
-// Direct-style
 // @main def main(): Unit = {
 //   val ids = List(1, 2, 3)
 //   val names = withConnection { db =>
@@ -58,67 +49,6 @@ def withConnection[R](logic: Database => R): R = {
 //   }
 //   println(names)
 // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-case class DB[R](run: Database => R)
-
-def runMonad[R](logic: DB[R]): R = {
-  val db = openConnection()
-  val result = logic.run(db)
-  db.close()
-  result
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Monadic-style
-// @main def main(): Unit = {
-//   val ids = List(1, 2, 3)
-//   val monad = DB { db =>
-//     ids.map(id => db.fetchName(id))
-//   }
-
-//   val names = runMonad(monad)
-//   println(names.toList)
-// }
-
-
-
-
-
-
-
-
-
 
 
 
