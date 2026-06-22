@@ -60,14 +60,13 @@ def withConnection[R](logic: Database => R): R = {
 object WorldOfKyo {
   import kyo._
 
-  // def setToOne: Unit < Var[Int] = Var.set[Int](1).andThen(())
-
   // def simpleProg() = {
   //   val program: Int < Env[Int] = Env.use[Int] { x => x * 2 }
-
   //   val comp: Int < Any = Env.run(5)(program)
   //   val result = comp.eval
   // }
+
+  // def setToOne: Unit < Var[Int] = Var.set[Int](1).andThen(())
 }
 
 
