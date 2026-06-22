@@ -12,7 +12,7 @@ object SomeDatabase {
     private var isClosed = false
     override def fetchName(id: Int): String = {
       if (isClosed) throw new RuntimeException("Database connection closed!")
-      records(id)
+      records.applyOrElse(id, _ => s"User-$id")
     }
     override def close(): Unit = isClosed = true
   }
