@@ -5,14 +5,19 @@ import scala.language.experimental.captureChecking
 import capsicum.core._
 import capsicum.effects.{ConsoleCapability, StdConsoleHandler}
 
+import com.sun.star.beans.XPropertySet
 import com.sun.star.bridge.XUnoUrlResolver
 import com.sun.star.comp.helper.Bootstrap
+import com.sun.star.drawing.{XDrawPage, XShape, XShapes}
 import com.sun.star.frame.XComponentLoader
 import com.sun.star.lang.XComponent
-import com.sun.star.presentation.{XPresentation2, XPresentationSupplier, XSlideShowController}
+import com.sun.star.text.XText
 import com.sun.star.uno.{UnoRuntime, XComponentContext}
+import com.sun.star.presentation.{XPresentation2, XPresentationPage, XPresentationSupplier, XSlideShowController}
+
 import java.io.File
 import scala.concurrent.duration.{Duration, DurationLong}
+import scala.util.boundary
 
 // soffice "--accept=socket,host=localhost,port=8100;urp;"
 
@@ -21,12 +26,12 @@ import scala.concurrent.duration.{Duration, DurationLong}
 sealed trait PresentationEff[V] extends Effect[V]
 case object Next extends PresentationEff[Unit]
 case object Prev extends PresentationEff[Unit]
-case object SlideIdx extends PresentationEff[Int]
+case object SlideInfo extends PresentationEff[(Int, String)]
 
 trait PresentationCapability[R] extends Capability[PresentationEff, R, R] {
   final inline def nextSlide(inline resume: Unit => R): R = perform(Next)(resume)
   final inline def prevSlide(inline resume: Unit => R): R = perform(Prev)(resume)
-  final inline def slideIdx(inline resume: Int => R): R = perform(SlideIdx)(resume)
+  final inline def slideInfo(inline resume: ((Int, String)) => R): R = perform(SlideInfo)(resume)
 }
 
 sealed trait TimerEff[V] extends Effect[V]
@@ -67,6 +72,54 @@ class LibreOfficePresentationHandler[R](path: String, host: String = "localhost"
     presentation = query(supplier.getPresentation(), classOf[XPresentation2])
   }
 
+  def getCurrentSlideNotes: String = {
+    val drawPage: XDrawPage = getLiveController.getCurrentSlide()
+    if (drawPage == null) return ""
+
+    val presPage = query(drawPage, classOf[XPresentationPage])
+    if (presPage == null) return ""
+    
+    val notesPage: XDrawPage = presPage.getNotesPage()
+    if (notesPage == null) return ""
+    
+    val shapes = query(notesPage, classOf[XShapes])
+    val notesBuilder = new StringBuilder()
+
+    for (i <- 0 until shapes.getCount) {
+      val shape = query(shapes.getByIndex(i), classOf[XShape])
+      if (shape != null) {
+        val shapeType = shape.getShapeType
+        
+        // Fallback check: It's explicitly a NotesShape OR an OutlineTextShape inside a notes page
+        if (shapeType == "com.sun.star.presentation.NotesShape" || 
+            shapeType == "com.sun.star.presentation.OutlinerShape") {
+          
+          val textObj = query(shape, classOf[XText])
+          if (textObj != null && textObj.getString.trim.nonEmpty) {
+            notesBuilder.append(textObj.getString).append("\n")
+          }
+        }
+      }
+    }
+
+    if (notesBuilder.isEmpty) {
+      for (i <- 0 until shapes.getCount) {
+        val shape = query(shapes.getByIndex(i), classOf[XShape])
+        if (shape != null) {
+          val shapeType = shape.getShapeType
+          if (!shapeType.contains("Header") && !shapeType.contains("Footer") && !shapeType.contains("DateTime")) {
+            val textObj = query(shape, classOf[XText])
+            if (textObj != null && textObj.getString.trim.nonEmpty) {
+              notesBuilder.append(textObj.getString).append("\n")
+            }
+          }
+        }
+      }
+    }
+
+    notesBuilder.toString().trim
+  }
+
   loadPresentation(File(path))
   presentation.start()
 
@@ -85,7 +138,7 @@ class LibreOfficePresentationHandler[R](path: String, host: String = "localhost"
   override protected def handleEff[V](eff: PresentationEff[V]): V = eff match {
     case Next => getLiveController.gotoNextEffect()
     case Prev => getLiveController.gotoPreviousEffect()
-    case SlideIdx => getLiveController.getCurrentSlideIndex()
+    case SlideInfo => (getLiveController.getCurrentSlideIndex(), getCurrentSlideNotes)
   }
 }
 
@@ -106,8 +159,8 @@ def formatDuration(t: Duration): String = f"${t.toMinutes}%02d:${t.toSeconds % 6
 def deliverThesis(using pres: PresentationCapability[Unit], console: ConsoleCapability[Unit], timer: TimerCapability[Unit]): Unit = {
   def loop: Unit = {
     timer.current { t =>
-      pres.slideIdx { slide =>
-        console.print(f"Slide $slide (${formatDuration(t)})\n> ") { _ =>
+      pres.slideInfo { (slide, notes) =>
+        console.print(f"Slide $slide (${formatDuration(t)})\n$notes\n> ") { _ =>
           console.readLine { cmd => cmd.toLowerCase() match
             case "exit" | "quit"       => ()
             case "back" | "prev" | "b" => pres.prevSlide(_ => loop)
