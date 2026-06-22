@@ -165,16 +165,16 @@ object WorldOfTurbolift {
 
     case object State extends turbolift.effects.StateEffect[Option[Database]]
 
-    def prog: Try[String] !! (State.type) = {
-      withConnection { db =>
-        State.put(Some(db))
-      } &&!
-      State.gets { db =>
-        Try(db.get.fetchName(1))
-      }
-    }
-    val result = prog.handleWith(State.handler(None).dropState).run
-    println(result)
+    // def prog: Try[String] !! (State.type) = {
+    //   withConnection { db =>
+    //     State.put(Some(db))
+    //   } &&!
+    //   State.gets { db =>
+    //     Try(db.get.fetchName(1))
+    //   }
+    // }
+    // val result = prog.handleWith(State.handler(None).dropState).run
+    // println(result)
   }
 
 
