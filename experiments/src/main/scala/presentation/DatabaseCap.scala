@@ -38,11 +38,11 @@ object DatabaseCapability {
 
 
 
-@main def main() = {
-  val ids = List(1, 2, 3)
-  val names = DatabaseCapability.withConnection[String, List[String]] { cap ?=>
-    ids.map(id => cap.fetchName(id)(name => name))
-  }
+// @main def main() = {
+//   val ids = List(1, 2, 3)
+//   val names = DatabaseCapability.withConnection[String, List[String]] { cap ?=>
+//     ids.map(id => cap.fetchName(id)(name => name))
+//   }
 
-  println(names)
-}
+//   println(names)
+// }

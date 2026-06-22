@@ -155,6 +155,40 @@ object WorldOfKyo {
 
 object WorldOfTurbolift {
   import turbolift._
+  import scala.util.Try
+
+
+  def runState(): Unit = {
+    import turbolift.!!
+    import turbolift.effects.StateEffect
+
+
+    case object State extends turbolift.effects.StateEffect[Option[Database]]
+
+    def prog: Try[String] !! (State.type) = {
+      withConnection { db =>
+        State.put(Some(db))
+      } &&!
+      State.gets { db =>
+        Try(db.get.fetchName(1))
+      }
+    }
+    val result = prog.handleWith(State.handler(None).dropState).run
+    println(result)
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   def runStream(ids: Iterable[Int]): List[String] = {
     val stream = withConnection { db =>
