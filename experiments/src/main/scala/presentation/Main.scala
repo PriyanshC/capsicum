@@ -111,3 +111,74 @@ def runMonad[R](logic: DB[R]): R = {
 //   println(names.toList)
 // }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+object WorldOfKyo {
+  import kyo._
+
+  // def setToOne: Unit < Var[Int] = Var.set[Int](1).andThen(())
+
+  // def simpleProg() = {
+  //   val program: Int < Env[Int] = Env.use[Int] { x => x * 2 }
+
+  //   val comp: Int < Any = Env.run(5)(program)
+  //   val result = comp.eval
+  // }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+object WorldOfTurbolift {
+  import turbolift._
+
+  def runStream(ids: Iterable[Int]): List[String] = {
+    val stream = withConnection { db =>
+      beam.Stream.from(ids).mapEff(id => turbolift.effects.IO(db.fetchName(id))).toList
+    }
+    stream.runIO.get
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+// @main def main(): Unit = {
+//   WorldOfTurbolift.runStream(List(1, 2, 3))
+// }
+
+
+
