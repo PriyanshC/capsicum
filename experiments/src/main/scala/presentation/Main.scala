@@ -94,7 +94,7 @@ object WorldOfTurbolift {
 
     case object State extends turbolift.effects.StateEffect[Option[Database]]
 
-    // def prog: Try[String] !! (State.type) = {
+    // def prog: Try[String] !! State.type = {
     //   withConnection { db =>
     //     State.put(Some(db))
     //   } &&!
