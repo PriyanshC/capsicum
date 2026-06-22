@@ -41,7 +41,7 @@ object Sumh {
     val writer = new SumWriterHandler[R]()
     val env = new EnvCapability[Int, R](Sumh.LIMIT)
     
-    val (resInt, finalState) = run(state, writer, env)(program).eval
+    val (resInt, finalState) = state.run(writer.run(env.run(program))).eval
     
     (resInt, writer.sum, finalState)
   }
