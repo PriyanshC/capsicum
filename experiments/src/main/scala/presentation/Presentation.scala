@@ -157,22 +157,19 @@ class TimerCapability[R] extends Capability[TimerEff, R, R] with OneShotKeepResu
 def formatDuration(t: Duration): String = f"${t.toMinutes}%02d:${t.toSeconds % 60}%02d"
 
 def deliverThesis(using pres: PresentationCapability[Unit], console: ConsoleCapability[Unit], timer: TimerCapability[Unit]): Unit = {
-  def loop: Unit = {
-    timer.current { t =>
-      pres.slideInfo { (slide, notes) =>
-        console.print(f"Slide $slide (${formatDuration(t)})\n$notes\n> ") { _ =>
-          console.readLine { cmd => cmd.toLowerCase() match
-            case "exit" | "quit"       => ()
-            case "start"               => timer.start(_ => loop)
-            case "back" | "prev" | "b" => pres.prevSlide(_ => loop)
-            case "time" | "t"          => timer.current(tt => console.print(s"${{formatDuration(tt)}}\n")(_ => loop))
-            case _                     => pres.nextSlide(_ => loop)
-          }
+  timer.current { t =>
+    pres.slideInfo { (slide, notes) =>
+      console.print(f"Slide $slide (${formatDuration(t)})\n$notes\n> ") { _ =>
+        console.readLine { cmd => cmd.toLowerCase() match
+          case "exit" | "quit"       => ()
+          case "start"               => timer.start(_ => deliverThesis)
+          case "back" | "prev" | "b" => pres.prevSlide(_ => deliverThesis)
+          case "time" | "t"          => timer.current(tt => console.print(s"${{formatDuration(tt)}}\n")(_ => deliverThesis))
+          case _                     => pres.nextSlide(_ => deliverThesis)
         }
       }
     }
   }
-  loop
 }
 
 @main def runPresentationController(args: String*): Unit = {
