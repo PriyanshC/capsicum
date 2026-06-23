@@ -191,7 +191,11 @@ class TimerCapability[R] extends Capability[TimerEff, R, R] with OneShotKeepResu
 
 def formatDuration(t: Duration): String = f"${t.toMinutes}%02d:${t.toSeconds % 60}%02d"
 
-def deliverThesis(using pres: PresentationCapability[Unit], console: ConsoleCapability[Unit], timer: TimerCapability[Unit]): Unit = {
+def deliverThesis(
+  using pres: PresentationCapability[Unit],
+  console: ConsoleCapability[Unit],
+  timer: TimerCapability[Unit]
+): Unit = {
   timer.current { t =>
     pres.slideInfo { (slide, notes) =>
       console.print(f"Slide $slide (${formatDuration(t)})\n$notes\n> ") { _ =>
