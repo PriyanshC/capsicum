@@ -161,7 +161,7 @@ def deliverThesis(using pres: PresentationCapability[Unit], console: ConsoleCapa
     pres.slideInfo { (slide, notes) =>
       console.print(f"Slide $slide (${formatDuration(t)})\n$notes\n> ") { _ =>
         console.readLine { cmd => cmd.toLowerCase() match
-          case "exit" | "quit"       => ()
+          case "exit" | "quit" | "q" => ()
           case "start"               => timer.start(_ => deliverThesis)
           case "back" | "prev" | "b" => pres.prevSlide(_ => deliverThesis)
           case "time" | "t"          => timer.current(tt => console.print(s"${{formatDuration(tt)}}\n")(_ => deliverThesis))
