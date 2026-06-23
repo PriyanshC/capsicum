@@ -123,6 +123,24 @@ class LibreOfficePresentationHandler[R](path: String, host: String = "localhost"
   loadPresentation(File(path))
   presentation.start()
 
+  def close(): Unit = {
+    try {
+      if (presentation != null && presentation.isRunning) {
+        presentation.end()
+      }
+    } catch {
+      case _: Throwable => ()
+    }
+
+    try {
+      if (document != null) {
+        document.dispose()
+      }
+    } catch {
+      case _: Throwable => ()
+    }
+  }
+
   private def query[T](obj: Any, clazz: Class[T]): T = {
     UnoRuntime.queryInterface(clazz, obj)
   }
@@ -139,6 +157,23 @@ class LibreOfficePresentationHandler[R](path: String, host: String = "localhost"
     case Next => getLiveController.gotoNextEffect()
     case Prev => getLiveController.gotoPreviousEffect()
     case SlideInfo => (getLiveController.getCurrentSlideIndex(), getCurrentSlideNotes)
+  }
+}
+
+object LibreOfficePresentation {
+  def runPres[R](
+      path: String,
+      host: String = "localhost",
+      port: Int = 8100
+  )(
+      prog: PresentationCapability[R] ?=> R
+  ): R = {
+    val handler = new LibreOfficePresentationHandler[R](path, host, port)
+    try {
+      handler.run(prog)
+    } finally {
+      handler.close()
+    }
   }
 }
 
@@ -175,8 +210,7 @@ def deliverThesis(using pres: PresentationCapability[Unit], console: ConsoleCapa
 @main def runPresentationController(args: String*): Unit = {
   val path = args.headOption.getOrElse("/home/pc/Downloads/MEng Presentation.pptx")
   val console = new StdConsoleHandler[Unit]
-  val handler = new LibreOfficePresentationHandler[Unit](path)
   val timer = new TimerCapability[Unit]
-  run(console, handler, timer)(deliverThesis)
+  console.run(timer.run(LibreOfficePresentation.runPres[Unit](path)(deliverThesis)))
 }
 
