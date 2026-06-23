@@ -4,8 +4,6 @@ import scala.language.experimental.captureChecking
 
 import capsicum.core._
 import capsicum.examples.presentation.Database
-import capsicum.examples.presentation.spoilers.SomeDatabase
-import capsicum.examples.presentation.DatabaseEff.FetchName
 
 
 enum DatabaseEff[V] extends Effect[V] {
@@ -17,7 +15,7 @@ class DatabaseCapability[R](db: Database^) extends Capability[DatabaseEff, R, R]
   override def perform[V](eff: DatabaseEff[V])(resume: V => R): R = eff match
     case DatabaseEff.FetchName(id) => resume(db.fetchName(id))
 
-  inline def fetchName(id: Int) = perform(FetchName(id))
+  inline def fetchName(id: Int) = perform(DatabaseEff.FetchName(id))
 }
 
 
